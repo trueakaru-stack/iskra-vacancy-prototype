@@ -1,0 +1,24 @@
+{
+  "check": {
+    "source": "showcase"
+  },
+  "chevron-down": {
+    "source": "showcase"
+  },
+  "chevron-right": {
+    "source": "showcase",
+    "mirrorInRtl": true
+  },
+  "chevron-up": {
+    "source": "showcase"
+  },
+  "drag": {
+    "source": "showcase"
+  },
+  "selector": {
+    "source": "reference"
+  },
+  "x": {
+    "source": "showcase"
+  }
+}

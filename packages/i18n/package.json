@@ -1,0 +1,37 @@
+{
+  "name": "@neobook/i18n",
+  "version": "0.4.2",
+  "description": "Локализация дизайн-системы NeoBook: словари компонентов, плюрализация, форматтеры, направление письма.",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "!dist/**/*.tsbuildinfo"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build && tsc -b"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@internationalized/date": "catalog:",
+    "@internationalized/number": "catalog:",
+    "react-aria-components": "catalog:"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "@neobook/vite-config": "workspace:*",
+    "@vanilla-extract/vite-plugin": "catalog:",
+    "@vitejs/plugin-react": "catalog:"
+  }
+}

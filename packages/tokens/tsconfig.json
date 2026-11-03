@@ -1,0 +1,12 @@
+{
+  "extends": "../../configs/tsconfig/react-library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    // JS собирает Vite, tsc отвечает только за .d.ts. Разделение нужно,
+    // потому что Vite умеет vanilla-extract, а tsc — нет.
+    "emitDeclarationOnly": true
+  },
+  "include": ["src/**/*.ts"]
+}

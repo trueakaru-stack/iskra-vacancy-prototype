@@ -1,0 +1,49 @@
+packages:
+  - 'packages/*'
+  - 'configs/*'
+  - 'apps/*'
+
+allowBuilds:
+  esbuild: true
+
+# Явно фиксируем версии, которые должны быть одинаковыми во всём монорепо.
+# Пакеты ссылаются на них как "catalog:" — это исключает рассинхрон React или RAC
+# между @neobook/react и Storybook, что даёт трудноуловимые баги с хуками.
+catalog:
+  react: 19.2.8
+  react-dom: 19.2.8
+  '@types/react': 19.2.7
+  '@types/react-dom': 19.2.4
+  react-aria-components: 1.20.0
+  react-aria: 3.51.0
+  '@internationalized/date': 3.12.3
+  '@internationalized/number': 3.6.7
+  '@internationalized/string': 3.2.10
+  '@vanilla-extract/css': 1.21.2
+  '@vanilla-extract/recipes': 0.5.7
+  '@vanilla-extract/dynamic': 2.1.5
+  '@vanilla-extract/vite-plugin': 5.2.6
+  vite: 8.2.1
+  vitest: 4.1.10
+  '@vitejs/plugin-react': 6.0.5
+  typescript: 7.0.2
+  clsx: 2.1.1
+  # Отрисовка графиков. Восемь пакетов @visx/* держатся одной версией:
+  # они делят транзитивные d3-* и типы шкал, а рассинхрон даёт
+  # две копии d3-scale в бандле потребителя.
+  '@visx/axis': 4.0.0
+  '@visx/curve': 4.0.0
+  '@visx/event': 4.0.0
+  '@visx/gradient': 4.0.0
+  '@visx/grid': 4.0.0
+  '@visx/group': 4.0.0
+  '@visx/scale': 4.0.0
+  '@visx/shape': 4.0.0
+
+# RAC тянет react-aria/react-stately транзитивно. Строгий hoisting в pnpm
+# гарантирует, что компоненты не смогут случайно импортировать то,
+# что не объявлено в их package.json. Поэтому react-aria объявлен явно:
+# карточка объекта строится на его хуках (usePress, useHover,
+# useFocusWithin, useFocusRing) — готового компонента карточки в RAC нет,
+# а состояния оверлейного уровня нужны на корне. Версия держится
+# в одной строке с react-aria-components: RAC 1.20 собран на react-aria 3.51.

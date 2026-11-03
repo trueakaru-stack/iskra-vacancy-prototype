@@ -1,0 +1,75 @@
+import '@testing-library/jest-dom/vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { NeoBookProvider } from '@neobook/react/theme/NeoBookProvider';
+import { App } from '../src/App';
+
+vi.mock('../src/generation', () => ({
+  generateDescription: vi.fn(async () => ({ tasks: 'Исследования', project: 'Продукт', plans: 'Развитие', skills: 'Figma' })),
+}));
+
+beforeAll(() => {
+  window.matchMedia = vi.fn().mockImplementation(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  Element.prototype.scrollIntoView = vi.fn();
+});
+afterEach(cleanup);
+
+function mount() {
+  return render(<NeoBookProvider locale="ru-RU" defaultPreference="light" persist={false}><App /></NeoBookProvider>);
+}
+
+async function goToQuestions() {
+  fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
+  const modal = await screen.findByRole('dialog');
+  fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: 'Дизайнер' } });
+  fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+  fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+  return modal;
+}
+
+describe('создание вакансии', () => {
+  it('показывает по одному вопросу, проверяет ответ и пересчитывает прогресс при возврате', async () => {
+    mount();
+    const modal = await goToQuestions();
+    expect(within(modal).getByText('Вопрос 1 из 4')).toBeInTheDocument();
+    const next = within(modal).getByRole('button', { name: 'Далее' });
+    expect(next).toBeDisabled();
+    const answer = within(modal).getByLabelText('Ваш ответ');
+    fireEvent.change(answer, { target: { value: 'Исследует продукт' } });
+    expect(within(modal).getByRole('progressbar', { name: 'Заполненность ответов' })).toHaveAttribute('aria-valuenow', '25');
+    fireEvent.click(next);
+    expect(within(modal).getByText('Вопрос 2 из 4')).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Исследует продукт');
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: ' ' } });
+    expect(within(modal).getByRole('progressbar', { name: 'Заполненность ответов' })).toHaveAttribute('aria-valuenow', '0');
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+  });
+
+  it('сохраняет сформированный черновик и открывает его повторно', async () => {
+    mount();
+    const modal = await goToQuestions();
+    for (let index = 0; index < 4; index++) {
+      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
+      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
+    }
+    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Исследования');
+    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Изучать потребности' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const row = screen.getByRole('row', { name: /Дизайнер/ });
+    await act(async () => { fireEvent.click(row); });
+    const reopened = await screen.findByRole('dialog');
+    expect(within(reopened).getByLabelText('Основные обязанности')).toHaveValue('Изучать потребности');
+  });
+
+  it('позволяет вводить ответ вручную, если браузер не поддерживает распознавание', async () => {
+    mount();
+    const modal = await goToQuestions();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Текст сохранён' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Начать запись' }));
+    expect(await within(modal).findByText(/не поддерживается/i)).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Текст сохранён');
+    expect(within(modal).getByRole('button', { name: 'Повторить запись' })).toBeInTheDocument();
+  });
+});

@@ -1,0 +1,41 @@
+{
+  "name": "@neobook/tokens",
+  "version": "0.4.2",
+  "description": "Дизайн-токены NeoBook — публичный контракт темизации.",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist",
+    "!dist/**/*.tsbuildinfo",
+    "generated",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./tokens.css": "./generated/tokens.css",
+    "./contract": {
+      "types": "./dist/contract.css.d.ts",
+      "default": "./dist/contract.css.js"
+    },
+    "./tokens.json": "./generated/tokens.json",
+    "./source": "./src"
+  },
+  "scripts": {
+    "build": "node scripts/build-tokens.mjs && vite build && tsc -b",
+    "dev": "node scripts/build-tokens.mjs --watch",
+    "test": "node scripts/build-tokens.mjs"
+  },
+  "dependencies": {
+    "@vanilla-extract/css": "catalog:"
+  },
+  "devDependencies": {
+    "@vanilla-extract/vite-plugin": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

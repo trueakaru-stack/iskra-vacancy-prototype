@@ -1,0 +1,12 @@
+{
+  "//": "Сборочный конфиг: только то, что уезжает в пакет. Тесты исключены, чтобы их декларации не попадали в dist.",
+  "extends": "../../configs/tsconfig/react-library.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": []
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

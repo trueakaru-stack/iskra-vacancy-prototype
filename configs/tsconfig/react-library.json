@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": [],
+    // Разделение труда: Vite собирает JS (он умеет vanilla-extract, tsc — нет),
+    // tsc отвечает только за декларации. Оба пишут в dist/, поэтому Vite
+    // не чистит директорию, а tsc не эмитит .js.
+    "emitDeclarationOnly": true
+  }
+}

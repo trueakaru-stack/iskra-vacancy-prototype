@@ -1,0 +1,22 @@
+{
+  "name": "@neobook/react",
+  "version": "0.4.2",
+  "private": true,
+  "type": "module",
+  "description": "Используемые прототипом компоненты NeoBook и их зависимости.",
+  "sideEffects": [
+    "*.css"
+  ],
+  "peerDependencies": {
+    "react": "^18.3.0 || ^19.0.0",
+    "react-dom": "^18.3.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "@neobook/i18n": "workspace:*",
+    "@neobook/icons": "workspace:*",
+    "@neobook/tokens": "workspace:*",
+    "@vanilla-extract/css": "catalog:",
+    "clsx": "catalog:",
+    "react-aria-components": "catalog:"
+  }
+}

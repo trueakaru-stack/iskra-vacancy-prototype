@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.turbo/
+.wrangler/
+.visual-preview/
+.visual-config.mjs
+coverage/
+*.tsbuildinfo
+.env*
+!.env.example
+packages/icons/src/generated/
+packages/tokens/src/contract.css.ts
+packages/tokens/src/values.ts
+packages/tokens/generated/

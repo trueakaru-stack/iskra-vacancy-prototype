@@ -1,0 +1,6 @@
+{
+  "name": "@neobook/tsconfig",
+  "version": "0.0.0",
+  "private": true,
+  "files": ["library.json", "react-library.json"]
+}

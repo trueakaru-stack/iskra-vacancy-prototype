@@ -1,0 +1,14 @@
+{
+  "name": "@neobook/vite-config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./library.ts"
+  },
+  "devDependencies": {
+    "@vanilla-extract/vite-plugin": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "vite": "catalog:"
+  }
+}
