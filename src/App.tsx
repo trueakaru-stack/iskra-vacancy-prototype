@@ -138,7 +138,7 @@ export function App() {
         <div className="page-heading"><h1>Вакансии</h1></div>
         <div className="table-controls">
           <TextField className="search-field" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} prefix={<Search size={16} />} />
-          <Select className="region-filter" label="Регион" placeholder="Регион" selectedKey={region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
+          <Select className="region-filter" label="Регион" placeholder="Регион" selectedKey={region === 'all' ? null : region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
             <SelectItem id="all">Все регионы</SelectItem>
             {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
           </Select>
@@ -153,7 +153,7 @@ export function App() {
             setOpen(true);
           }}>Добавить вакансию</Button>
         </div>
-        <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
+        <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
           <DataTableHeader>
             <DataTableColumn id="title" isRowHeader allowsSorting minWidth={280}>Название</DataTableColumn>
             <DataTableColumn id="region" allowsSorting width={150}>Регион</DataTableColumn>

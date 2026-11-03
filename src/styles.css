@@ -44,16 +44,17 @@ button:disabled { cursor: not-allowed; }
 .brand-copy span { color: oklch(45% 0 0); }
 .sidebar nav { margin-top: 32px; }
 .nav-current { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 10px; color: oklch(36% 0 0); }
-.content { min-width: 0; flex: 1; padding: 30px 30px 32px; }
+.content { display: flex; flex-direction: column; min-width: 0; flex: 1; padding: 30px 30px 32px; }
 .page-heading { display: flex; align-items: center; margin-bottom: 20px; }
 .page-heading h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 650; }
 .table-controls { display: flex; gap: 10px; align-items: end; margin-bottom: 16px; }
 .search-field { width: 270px; }
-.search-field label, .region-filter label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.search-field label, .region-filter > span:first-child { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+.search-field, .region-filter, .fields, .answer-field { --nb-border-default: oklch(66% 0 0); --nb-border-strong: oklch(58% 0 0); --nb-border-focus: oklch(55% 0 0); }
 .region-filter { width: 160px; }
 .add-button { margin-left: auto; white-space: nowrap; }
-.vacancy-table { width: 100%; }
-.vacancy-table td:first-child { font-weight: 500; }
+.vacancy-table { width: 100%; flex: 1 1 auto; min-height: 320px; }
+.vacancy-table td:first-child { font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
 .table-count { margin: 20px 0 0 2px; color: oklch(55.6% 0 0); font-size: 13px; }
 .vacancy-modal { max-width: calc(100vw - 32px); }
 .modal-content h2 { margin: 0 0 24px; font-size: 18px; line-height: 1.4; font-weight: 600; }
@@ -71,6 +72,7 @@ button:disabled { cursor: not-allowed; }
 .voice-control { position: absolute; bottom: 10px; right: 10px; display: flex; align-items: center; gap: 10px; }
 .voice-ring { display: grid; place-items: center; position: relative; }
 .voice-ring > * { grid-area: 1 / 1; }
+.voice-ring [role='progressbar'][aria-valuenow='0'] svg circle:last-child { visibility: hidden; }
 .voice-button { z-index: 1; border-radius: 50%; }
 .voice-level { display: flex; align-items: center; gap: 3px; height: 28px; }
 .voice-level span { display: block; width: 3px; height: 24px; border-radius: 2px; background: oklch(20.5% 0 0); transition: transform 80ms linear; }
