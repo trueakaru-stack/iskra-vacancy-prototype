@@ -59,6 +59,7 @@ describe('голосовой ввод', () => {
     expect(String(fetchAudio.mock.calls[0][0])).toBe('https://worker.example/transcribe');
     expect(fetchAudio.mock.calls[0][1].body).toBeInstanceOf(Blob);
     expect(hook.result.current.state).toBe('success');
+    expect(hook.result.current.message).toBe('');
     expect(onTranscript).toHaveBeenCalledWith('Тестовый ответ');
     expect(trackStop).toHaveBeenCalledOnce();
   });

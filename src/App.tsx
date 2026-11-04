@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Check, CircleAlert, List, LoaderCircle, Mic, Plus, Search, Sparkle, Square } from 'lucide-react';
+import { Check, CircleAlert, CirclePlus, List, LoaderCircle, Mic, Plus, Sparkle, Square } from 'lucide-react';
 import { Button } from '@neobook/react/components/Button/Button';
 import { DataTable, DataTableBody, DataTableCell, DataTableColumn, DataTableHeader, DataTableRow } from '@neobook/react/components/DataTable/DataTable';
 import { Modal } from '@neobook/react/components/Modal/Modal';
 import { ProgressRing } from '@neobook/react/components/ProgressRing/ProgressRing';
 import { Select, SelectItem } from '@neobook/react/components/Select/Select';
+import { Stepper } from '@neobook/react/components/Stepper/Stepper';
 import { TextField } from '@neobook/react/components/TextField/TextField';
 import { Textarea } from '@neobook/react/components/Textarea/Textarea';
 import { generateDescription } from './generation';
@@ -13,6 +14,14 @@ import { answerProgress, appendTranscript, createEmptyDraft, DEMO_VACANCIES, fil
 
 type Phase = 'main' | 'conditions' | 'questions' | 'review';
 type Sort = { column: string | number; direction: 'ascending' | 'descending' };
+
+const STAGES: Array<{ label: string }> = [
+  { label: 'Основное' },
+  { label: 'Условия' },
+  { label: 'Описание' },
+  { label: 'Проверка' },
+];
+const PHASES: Phase[] = ['main', 'conditions', 'questions', 'review'];
 
 function formatDate(date: string | null): string {
   if (!date) return '—';
@@ -137,11 +146,14 @@ export function App() {
       <main className="content">
         <div className="page-heading"><h1>Вакансии</h1></div>
         <div className="table-controls">
-          <TextField className="search-field" size="lg" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} prefix={<Search size={16} />} />
-          <Select className="region-filter" size="lg" label="Фильтр региона" placeholder="Регион" selectedKey={region === 'all' ? null : region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
-            <SelectItem id="all">Все регионы</SelectItem>
-            {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
-          </Select>
+          <TextField className="search-field" size="lg" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} />
+          <div className="region-wrap">
+            <CirclePlus className="region-icon" aria-hidden="true" />
+            <Select className="region-filter" size="lg" label="Фильтр региона" placeholder="Регион" selectedKey={region === 'all' ? null : region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
+              <SelectItem id="all">Все регионы</SelectItem>
+              {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
+            </Select>
+          </div>
           <Button className="add-button" variant="primary" size="lg" leadingIcon={<Plus size={16} />} onPress={() => {
             if (editingId !== null) {
               setEditingId(null);
@@ -179,29 +191,30 @@ export function App() {
           {phase !== 'main' && <Button variant="secondary" onPress={moveBack} isDisabled={busy}>Назад</Button>}
           {phase === 'review'
             ? <Button variant="primary" onPress={save} isDisabled={!isFilled(draft.title)}>Сохранить</Button>
-            : <Button variant="primary" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
-                {phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
+            : <Button className="generation-button" variant="primary" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
+                {generating ? 'Создаём описание' : phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
               </Button>}
         </div>
       }>
+        <Stepper className="vacancy-steps" role="group" aria-label="Этапы создания вакансии" steps={STAGES} current={PHASES.indexOf(phase)} />
         <section key={`${phase}-${question}`} className="modal-content" aria-labelledby="section-title">
           <h2 id="section-title">{title}</h2>
           {phase === 'main' && <div className="fields">
-            <TextField label="Название вакансии" isRequired maxLength={200} placeholder="Например, руководитель отдела маркетинга" value={draft.title} onChange={(value) => setField('title', value)} />
-            <TextField label="Регион" placeholder="Например, Москва" value={draft.region} onChange={(value) => setField('region', value)} />
-            <TextField label="Опыт работы" placeholder="Например, от 3 лет" value={draft.experience} onChange={(value) => setField('experience', value)} />
+            <TextField size="lg" label="Название вакансии" isRequired maxLength={200} placeholder="Например, руководитель отдела маркетинга" value={draft.title} onChange={(value) => setField('title', value)} />
+            <TextField size="lg" label="Регион" placeholder="Например, Москва" value={draft.region} onChange={(value) => setField('region', value)} />
+            <TextField size="lg" label="Опыт работы" placeholder="Например, от 3 лет" value={draft.experience} onChange={(value) => setField('experience', value)} />
           </div>}
           {phase === 'conditions' && <div className="fields">
             <div className="field-pair">
-              <TextField label="Зарплата от" placeholder="Сумма" value={draft.salaryFrom} onChange={(value) => setField('salaryFrom', value)} inputMode="numeric" />
-              <TextField label="Зарплата до" placeholder="Сумма" value={draft.salaryTo} onChange={(value) => setField('salaryTo', value)} inputMode="numeric" />
+              <TextField size="lg" label="Зарплата от" placeholder="Сумма" value={draft.salaryFrom} onChange={(value) => setField('salaryFrom', value)} inputMode="numeric" />
+              <TextField size="lg" label="Зарплата до" placeholder="Сумма" value={draft.salaryTo} onChange={(value) => setField('salaryTo', value)} inputMode="numeric" />
             </div>
-            <TextField label="Занятость" placeholder="Например, полная" value={draft.employment} onChange={(value) => setField('employment', value)} />
-            <TextField label="Формат работы" placeholder="Например, удалённо" value={draft.workFormat} onChange={(value) => setField('workFormat', value)} />
-            <TextField label="График" placeholder="Например, 5/2" value={draft.schedule} onChange={(value) => setField('schedule', value)} />
-            <TextField label="Оформление" placeholder="Например, трудовой договор" value={draft.contract} onChange={(value) => setField('contract', value)} />
-            <Textarea label="Что предлагаем" rows={3} value={draft.benefits} onChange={(value) => setField('benefits', value)} />
-            <Textarea label="Будет преимуществом" rows={3} value={draft.advantages} onChange={(value) => setField('advantages', value)} />
+            <TextField size="lg" label="Занятость" placeholder="Например, полная" value={draft.employment} onChange={(value) => setField('employment', value)} />
+            <TextField size="lg" label="Формат работы" placeholder="Например, удалённо" value={draft.workFormat} onChange={(value) => setField('workFormat', value)} />
+            <TextField size="lg" label="График" placeholder="Например, 5/2" value={draft.schedule} onChange={(value) => setField('schedule', value)} />
+            <TextField size="lg" label="Оформление" placeholder="Например, трудовой договор" value={draft.contract} onChange={(value) => setField('contract', value)} />
+            <Textarea size="lg" label="Что предлагаем" rows={3} value={draft.benefits} onChange={(value) => setField('benefits', value)} />
+            <Textarea size="lg" label="Будет преимуществом" rows={3} value={draft.advantages} onChange={(value) => setField('advantages', value)} />
           </div>}
           {phase === 'questions' && <div className="question-area">
             <p className="question-count">Вопрос {question + 1} из 4</p>
@@ -218,14 +231,15 @@ export function App() {
               </div>
             </div>
             {speech.message && <p className={speech.state === 'error' ? 'voice-message error' : 'voice-message'} role="status">{speech.message}</p>}
+            {speech.state === 'success' && <span className="visually-hidden" role="status">Речь распознана</span>}
             {draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH && <p className="generation-error" role="alert">Сократите ответ до 4000 символов, чтобы продолжить.</p>}
             {generationError && <p className="generation-error" role="alert">{generationError}</p>}
           </div>}
           {phase === 'review' && sections && <div className="fields">
             {details.length > 0 && <dl className="review-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
-            {QUESTIONS.map(({ id, section }) => <Textarea key={id} label={section} rows={4} value={sections[id]} onChange={(value) => setSections((current) => current ? { ...current, [id]: value } : current)} />)}
-            {draft.advantages && <Textarea label="Будет преимуществом" rows={3} value={draft.advantages} onChange={(value) => setField('advantages', value)} />}
-            {draft.benefits && <Textarea label="Что предлагаем" rows={3} value={draft.benefits} onChange={(value) => setField('benefits', value)} />}
+            {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={sections[id]} onChange={(value) => setSections((current) => current ? { ...current, [id]: value } : current)} />)}
+            {draft.advantages && <Textarea size="lg" label="Будет преимуществом" rows={3} value={draft.advantages} onChange={(value) => setField('advantages', value)} />}
+            {draft.benefits && <Textarea size="lg" label="Что предлагаем" rows={3} value={draft.benefits} onChange={(value) => setField('benefits', value)} />}
             {!isFilled(draft.title) && <p className="generation-error" role="alert">Укажите название вакансии на шаге «Основное», чтобы сохранить черновик.</p>}
           </div>}
         </section>

@@ -86,7 +86,7 @@ export function useSpeech(onTranscript: (text: string) => void) {
       onTranscript(data.text.trim());
       pendingAudioRef.current = null;
       setCanRetry(false);
-      setMessage('Речь распознана. Проверьте ответ.');
+      setMessage('');
       setState('success');
     } catch {
       if (!liveRef.current || generationRef.current !== generation) return;

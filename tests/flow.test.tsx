@@ -3,6 +3,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { NeoBookProvider } from '@neobook/react/theme/NeoBookProvider';
 import { App } from '../src/App';
+import { generateDescription } from '../src/generation';
 
 vi.mock('../src/generation', () => ({
   generateDescription: vi.fn(async () => ({ tasks: 'Исследования', project: 'Продукт', plans: 'Развитие', skills: 'Figma' })),
@@ -42,6 +43,8 @@ describe('создание вакансии', () => {
   it('показывает по одному вопросу, проверяет ответ и пересчитывает прогресс при возврате', async () => {
     mount();
     const modal = await goToQuestions();
+    const steps = within(modal).getByRole('group', { name: 'Этапы создания вакансии' });
+    expect(steps.querySelector('[aria-current="step"]')).toHaveTextContent('Описание');
     expect(within(modal).getByText('Вопрос 1 из 4')).toBeInTheDocument();
     const next = within(modal).getByRole('button', { name: 'Далее' });
     expect(next).toBeDisabled();
@@ -55,6 +58,22 @@ describe('создание вакансии', () => {
     fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: ' ' } });
     expect(within(modal).getByRole('progressbar', { name: 'Заполненность ответов' })).toHaveAttribute('aria-valuenow', '0');
     expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+  });
+
+  it('показывает обработку на кнопке до получения результата', async () => {
+    let finish: (value: { tasks: string; project: string; plans: string; skills: string }) => void = () => undefined;
+    vi.mocked(generateDescription).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    mount();
+    const modal = await goToQuestions();
+    for (let index = 0; index < 4; index++) {
+      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
+      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
+    }
+    const pendingText = within(modal).getByText('Создаём описание');
+    expect(pendingText.closest('button')).toHaveAttribute('data-pending');
+    expect(within(modal).getByRole('progressbar', { name: 'Загрузка' })).toBeInTheDocument();
+    await act(async () => { finish({ tasks: 'Задачи', project: 'Проект', plans: 'Планы', skills: 'Навыки' }); });
+    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Задачи');
   });
 
   it('сохраняет сформированный черновик и открывает его повторно', async () => {
