@@ -24,8 +24,8 @@ function MultiChoice({ label, options, value, onChange }: {
 export function VacancyFields({ value, onChange }: { value: Fields; onChange: (patch: Partial<Fields>) => void }) {
   const salaryInvalid = !!value.salaryFrom && !!value.salaryTo && Number(value.salaryFrom) > Number(value.salaryTo);
   return <>
-    <TextField size="lg" label="Название вакансии" isRequired maxLength={200} value={value.title} onChange={(title) => onChange({ title })} isInvalid={!value.title.trim()} errorMessage="Укажите название вакансии." />
-    <TextField size="lg" label="Регион" maxLength={200} placeholder="Например, Москва" value={value.region} onChange={(region) => onChange({ region })} />
+    <TextField size="lg" label="Название вакансии" isRequired maxLength={200} placeholder="Например: менеджер по работе с клиентами" value={value.title} onChange={(title) => onChange({ title })} isInvalid={!value.title.trim()} errorMessage="Укажите название вакансии." />
+    <TextField size="lg" label="Регион" maxLength={200} placeholder="Например: Москва" value={value.region} onChange={(region) => onChange({ region })} />
     <Select className="choice-field" size="lg" label="Опыт работы" placeholder="Не указан" selectedKey={value.experience || null} onSelectionChange={(key) => onChange({ experience: String(key ?? '') })}>
       <SelectItem id="">Не указан</SelectItem>
       {optionsWithValue(EXPERIENCE, [value.experience]).map((option) => <SelectItem id={option} key={option}>{option}</SelectItem>)}

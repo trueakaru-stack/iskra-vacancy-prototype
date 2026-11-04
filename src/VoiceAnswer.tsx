@@ -6,16 +6,17 @@ import type { useSpeech } from './useSpeech';
 
 interface Props {
   value: string;
+  placeholder: string;
   onChange: (value: string) => void;
   speech: ReturnType<typeof useSpeech>;
   progress: number;
   disabled?: boolean;
 }
 
-export function VoiceAnswer({ value, onChange, speech, progress, disabled = false }: Props) {
+export function VoiceAnswer({ value, placeholder, onChange, speech, progress, disabled = false }: Props) {
   return <>
     <div className="answer-wrap">
-      <Textarea className="answer-field" label="Ваш ответ" placeholder="Нажмите на микрофон, продиктуйте ответ и остановите запись. Здесь появится текст для проверки и исправлений." rows={5} value={value} onChange={onChange} isDisabled={disabled} />
+      <Textarea className="answer-field" label="Ваш ответ" placeholder={placeholder} rows={5} value={value} onChange={onChange} isDisabled={disabled} />
       <div className="voice-control">
         {speech.state === 'listening' && <span className="voice-level" aria-hidden="true">{[0.45, 0.8, 1, 0.65, 0.35].map((weight, index) => <span key={index} style={{ transform: 'scaleY(' + Math.max(0.18, speech.level * weight) + ')' }} />)}</span>}
         <div className="voice-ring">

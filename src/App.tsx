@@ -22,6 +22,10 @@ const PROMPTS = {
   main: 'Назовите должность, регион и требуемый опыт работы.',
   conditions: 'Расскажите о зарплате, занятости, формате работы, графике и оформлении.',
 };
+const EXAMPLES = {
+  main: 'Например: ищем менеджера по работе с клиентами в Москве, опыт — от трёх лет.',
+  conditions: 'Например: от 120 до 160 тысяч рублей, полная занятость, удалённо, график 5/2, оформление по ТК РФ.',
+};
 
 function formatDate(date: string | null): string {
   if (!date) return '—';
@@ -224,7 +228,7 @@ export function App() {
           {manualEdit ? <>
             <div className="fields">
               <VacancyFields value={manualEdit.draft} onChange={(patch) => setManualEdit((current) => current ? { ...current, draft: { ...current.draft, ...patch } } : current)} />
-              {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={manualEdit.sections[id]} onChange={(value) => setManualEdit((current) => current ? { ...current, sections: { ...current.sections, [id]: value }, sectionEdits: { ...current.sectionEdits, [id]: value } } : current)} />)}
+              {QUESTIONS.map(({ id, section, placeholder }) => <Textarea size="lg" key={id} label={section} placeholder={placeholder} rows={4} value={manualEdit.sections[id]} onChange={(value) => setManualEdit((current) => current ? { ...current, sections: { ...current.sections, [id]: value }, sectionEdits: { ...current.sectionEdits, [id]: value } } : current)} />)}
             </div>
             <div className="modal-actions edit-actions">
               <Button variant="secondary" size="lg" onPress={() => setManualEdit(null)}>Отмена</Button>
@@ -238,7 +242,7 @@ export function App() {
           </div>}
           {editing && <section className="voice-editor" aria-labelledby="edit-heading">
             <h2 id="edit-heading">{revision ? 'Проверка изменений' : 'Что изменить?'}</h2>
-            <VoiceAnswer value={editText} onChange={(value) => { setEditText(value); setRevision(null); }} speech={speech} progress={100} disabled={operation !== null} />
+            <VoiceAnswer value={editText} placeholder="Например: измените регион на Казань, укажите зарплату от 150 тысяч и добавьте SQL в требования." onChange={(value) => { setEditText(value); setRevision(null); }} speech={speech} progress={100} disabled={operation !== null} />
             {editText.length > MAX_ANSWER_LENGTH && <p className="generation-error" role="alert">Сократите ответ до 4000 символов, чтобы продолжить.</p>}
             {error && <p className="generation-error" role="alert">{error}</p>}
             <div className="modal-actions">
@@ -285,7 +289,7 @@ export function App() {
         {phase !== 'review' ? <div className="question-area">
           {phase === 'questions' && <p className="question-count">Вопрос {question + 1} из 4</p>}
           <p className="question-text">{phase === 'questions' ? QUESTIONS[question].text : PROMPTS[phase]}</p>
-          <VoiceAnswer value={currentAnswer} onChange={(value) => {
+          <VoiceAnswer value={currentAnswer} placeholder={phase === 'questions' ? QUESTIONS[question].placeholder : EXAMPLES[phase]} onChange={(value) => {
             if (phase === 'main' || phase === 'conditions') setIntake((current) => ({ ...current, [phase]: value }));
             else { const id = QUESTIONS[question].id; setDraft((current) => ({ ...current, answers: { ...current.answers, [id]: value } })); }
           }} speech={speech} progress={answerProgress(draft.answers)} disabled={operation !== null} />
@@ -293,7 +297,7 @@ export function App() {
           {error && <p className="generation-error" role="alert">{error}</p>}
         </div> : sections && <div className="fields">
           <VacancyFields value={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
-          {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={sections[id]} onChange={(value) => { setSections((current) => current ? { ...current, [id]: value } : current); setSectionEdits((current) => ({ ...current, [id]: value })); }} />)}
+          {QUESTIONS.map(({ id, section, placeholder }) => <Textarea size="lg" key={id} label={section} placeholder={placeholder} rows={4} value={sections[id]} onChange={(value) => { setSections((current) => current ? { ...current, [id]: value } : current); setSectionEdits((current) => ({ ...current, [id]: value })); }} />)}
         </div>}
       </section>
     </Modal>

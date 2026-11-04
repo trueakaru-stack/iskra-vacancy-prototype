@@ -71,7 +71,7 @@ button:disabled { cursor: not-allowed; }
 .sidebar .nav-item[data-disabled] { opacity: 1; cursor: default; pointer-events: auto; }
 .content { display: flex; flex-direction: column; min-width: 0; flex: 1; padding: 32px 32px 32px; }
 .page-heading { display: flex; align-items: center; margin-bottom: 28px; }
-.page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 650; }
+.page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 700; }
 .table-controls { --nb-control-height-lg: 42px; display: flex; gap: 10px; align-items: end; margin-bottom: 21px; }
 .search-field { width: 332px; }
 .search-field input, .fields input, .fields textarea { font-size: var(--nb-font-size-16); }
@@ -86,14 +86,14 @@ button:disabled { cursor: not-allowed; }
 .add-button { margin-left: auto; white-space: nowrap; }
 .table-controls .add-icon { width: 18px; height: 18px; flex: none; }
 .vacancy-table { width: 100%; flex: 1 1 auto; min-height: 320px; }
-.vacancy-table th { background: oklch(100% 0 0); font-size: 14px; padding-block: var(--nb-space-8); }
+.vacancy-table th { background: oklch(100% 0 0); font-size: 14px; font-weight: 700; padding-block: var(--nb-space-8); }
 .vacancy-table td { font-size: 15px; }
-.vacancy-table td:first-child { font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
+.vacancy-table td:first-child { font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
 .vacancy-modal-overlay { align-items: flex-start; padding: 100px 16px 16px; }
 .vacancy-modal { --modal-inline-padding: var(--nb-space-9); --modal-scrollbar-width: 4px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 116px); border-radius: 16px; }
 .vacancy-modal > [role='dialog'] { display: flex; flex-direction: column; max-height: calc(100dvh - 116px); }
 .vacancy-modal > [role='dialog'] > :first-child { border: 0; padding: var(--nb-space-9) var(--nb-space-9) 0; }
-.vacancy-modal > [role='dialog'] > :first-child > h2 { color: var(--nb-fg-default); font-size: var(--nb-font-size-24); line-height: 1.25; }
+.vacancy-modal > [role='dialog'] > :first-child > h2 { color: var(--nb-fg-default); font-size: var(--nb-font-size-24); line-height: 1.25; font-weight: 700; }
 .vacancy-modal > [role='dialog'] > :first-child > button { width: 36px; height: 36px; flex: none; }
 .vacancy-modal > [role='dialog'] > :first-child > button svg { width: var(--nb-font-size-20); height: var(--nb-font-size-20); }
 .vacancy-modal > [role='dialog'] > :nth-child(2) { min-height: 0; margin-inline-end: calc((var(--modal-inline-padding) - var(--modal-scrollbar-width)) / 2); padding: var(--nb-space-8) calc((var(--modal-inline-padding) + var(--modal-scrollbar-width)) / 2) var(--modal-inline-padding) var(--modal-inline-padding); }
@@ -120,7 +120,7 @@ button:disabled { cursor: not-allowed; }
 .vacancy-steps > [data-state='current'] > :first-child { background: var(--nb-action-primary-bg); border-color: var(--nb-action-primary-bg); color: var(--nb-fg-on-primary); box-shadow: none; }
 .vacancy-steps > [data-state='complete'] > :first-child { background: var(--nb-bg-surface); border-color: var(--nb-action-primary-bg); color: var(--nb-action-primary-bg); }
 .modal-content { animation: show-step 160ms ease-out; }
-.modal-content h2 { margin: 0 0 24px; color: var(--nb-fg-default); font-size: var(--nb-font-size-20); line-height: 1.4; font-weight: 600; }
+.modal-content h2 { margin: 0 0 24px; color: var(--nb-fg-default); font-size: var(--nb-font-size-20); line-height: 1.4; font-weight: 700; }
 .fields { --nb-control-height-lg: 42px; display: grid; gap: 20px; }
 .fields textarea { resize: none; }
 .fields label, .fields .choice-field > span:first-child, .answer-field label, .salary-label { color: var(--nb-fg-secondary); }
@@ -173,7 +173,7 @@ button:disabled { cursor: not-allowed; }
 .detail-actions { --nb-control-height-lg: 42px; display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 32px; }
 .edit-actions { margin-top: 32px; }
 .voice-editor { margin-bottom: 32px; }
-.voice-editor h2, .description-sections h2 { margin: 0 0 16px; font-size: 20px; font-weight: 600; line-height: 1.4; }
+.voice-editor h2, .description-sections h2 { margin: 0 0 16px; font-size: 20px; font-weight: 700; line-height: 1.4; }
 .voice-editor .modal-actions { margin-top: 32px; }
 .description-sections { display: grid; gap: 32px; }
 .description-sections p { margin: 0; white-space: pre-wrap; font-size: 16px; line-height: 1.6; }
