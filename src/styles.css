@@ -100,10 +100,10 @@ button:disabled { cursor: not-allowed; }
 .vacancy-modal > [role='dialog'] > :last-child { background: transparent; border: 0; padding: 0 var(--nb-space-9) var(--nb-space-9); }
 .vacancy-modal textarea { resize: none; }
 @supports (corner-shape: superellipse(2.25)) {
-  .brand-mark, .vacancy-table { corner-shape: superellipse(2.25); }
+  .vacancy-table { corner-shape: superellipse(2.25); }
   /* Приближение контура Figma с cornerSmoothing 1 по методу Product Catalog. */
   .vacancy-modal { border-radius: 34.667px; corner-shape: superellipse(2.25); }
-  button:not(.voice-button), .search-field div:has(> input), .fields div:has(> input),
+  .brand-mark, button:not(.voice-button), .search-field div:has(> input), .fields div:has(> input),
   .fields textarea, .answer-field textarea, .choice-field > [role='group'] { border-radius: 26px; corner-shape: superellipse(2.25); }
 }
 .vacancy-steps { --nb-border-strong: var(--nb-border-default); align-items: center; margin-bottom: var(--nb-space-9); }
