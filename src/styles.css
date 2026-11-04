@@ -45,16 +45,16 @@ button:disabled { cursor: not-allowed; }
 .sidebar nav { margin-top: 36px; }
 .nav-current { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 10px; color: oklch(36% 0 0); }
 .content { display: flex; flex-direction: column; min-width: 0; flex: 1; padding: 32px 32px 32px; }
-.page-heading { display: flex; align-items: center; margin-bottom: 20px; }
+.page-heading { display: flex; align-items: center; margin-bottom: 28px; }
 .page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 650; }
-.table-controls { display: flex; gap: 10px; align-items: end; margin-bottom: 16px; }
+.table-controls { --nb-control-height-lg: 42px; display: flex; gap: 10px; align-items: end; margin-bottom: 21px; }
 .search-field { width: 332px; }
 .search-field label, .region-filter > span:first-child { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .search-field, .region-filter, .fields, .answer-field { --nb-border-default: oklch(66% 0 0); --nb-border-strong: oklch(58% 0 0); --nb-border-focus: oklch(55% 0 0); }
 .region-filter { width: 132px; }
 .add-button { margin-left: auto; white-space: nowrap; }
 .vacancy-table { width: 100%; flex: 1 1 auto; min-height: 320px; }
-.vacancy-table th { background: oklch(100% 0 0); font-size: 14px; }
+.vacancy-table th { background: oklch(100% 0 0); font-size: 14px; padding-block: var(--nb-space-8); }
 .vacancy-table td { font-size: 15px; }
 .vacancy-table td:first-child { font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
 .table-count { margin: 20px 0 0 2px; color: oklch(55.6% 0 0); font-size: 13px; }

@@ -44,4 +44,4 @@ pnpm run build
 
 При настройке размещения задайте `VITE_GENERATION_URL` как полный HTTPS-адрес `/generate` развёрнутого Worker. В `worker/wrangler.toml` задайте `ALLOWED_ORIGIN` равным точному origin интерфейса. В Worker должен быть привязан Workers AI под именем `AI`. CORS ограничивает вызовы из браузера, но не является защитой от прямых запросов: перед публичным использованием нужны отдельные ограничения доступа и расхода.
 
-Спецификация: [docs/specification.md](docs/specification.md). Решения и открытые вопросы: [docs/decisions.md](docs/decisions.md). Промпт и вклад ИИ: [docs/ai.md](docs/ai.md). Проверки и ограничения: [docs/verification.md](docs/verification.md).
+Презентация сценария: [docs/presentation.md](docs/presentation.md). Спецификация: [docs/specification.md](docs/specification.md). Решения и открытые вопросы: [docs/decisions.md](docs/decisions.md). Промпт и вклад ИИ: [docs/ai.md](docs/ai.md). Проверки и ограничения: [docs/verification.md](docs/verification.md).
