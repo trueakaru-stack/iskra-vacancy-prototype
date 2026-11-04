@@ -126,6 +126,7 @@ export function useSpeech(onTranscript: (text: string) => void) {
         try {
           const audio = new AudioContextClass();
           audioRef.current = audio;
+          if (audio.state === 'suspended') void audio.resume().catch(() => undefined);
           const source = audio.createMediaStreamSource(stream);
           const analyser = audio.createAnalyser();
           analyser.fftSize = 256;
