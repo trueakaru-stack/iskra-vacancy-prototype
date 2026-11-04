@@ -28,6 +28,17 @@ async function goToQuestions() {
 }
 
 describe('создание вакансии', () => {
+  it('закрывает окно по Escape и возвращает фокус к кнопке открытия', async () => {
+    mount();
+    const openButton = screen.getByRole('button', { name: /добавить вакансию/i });
+    openButton.focus();
+    fireEvent.click(openButton);
+    const modal = await screen.findByRole('dialog');
+    fireEvent.keyDown(modal, { key: 'Escape', code: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(openButton).toHaveFocus());
+  });
+
   it('показывает по одному вопросу, проверяет ответ и пересчитывает прогресс при возврате', async () => {
     mount();
     const modal = await goToQuestions();

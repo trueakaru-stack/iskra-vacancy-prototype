@@ -127,7 +127,7 @@ export function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Навигация">
-        <div className="brand">
+        <div className="brand" role="img" aria-label="Искра, Лаборатория ПИИ">
           <span className="brand-mark"><Sparkle aria-hidden="true" size={20} /></span>
           <span className="brand-copy"><strong>Искра</strong><span>Лаборатория ПИИ</span></span>
         </div>

@@ -7,11 +7,9 @@ import {
   type ProgressBarRenderProps as RACProgressBarRenderProps,
 } from 'react-aria-components';
 import clsx from 'clsx';
-// Цвет у кольца и у полосы один и тот же набор смыслов, поэтому и тип один:
-// два имени для одного перечисления развели бы API на ровном месте.
-import type { ProgressVariant } from '../Progress/Progress.js';
 import * as css from './ProgressRing.css.js';
 
+type ProgressVariant = keyof typeof css.fillVariant;
 export type ProgressRingSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /**

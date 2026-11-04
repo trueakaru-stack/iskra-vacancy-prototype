@@ -90,7 +90,8 @@ button:disabled { cursor: not-allowed; }
   .sidebar { width: 64px; flex-basis: 64px; padding: 20px 10px; }
   .brand { padding: 0; justify-content: center; }
   .brand-mark { width: 34px; height: 34px; }
-  .brand-copy, .nav-current { font-size: 0; }
+  .brand-copy { display: none; }
+  .nav-current { font-size: 0; }
   .nav-current { justify-content: center; padding: 0; }
   .content { padding: 24px 16px; }
   .table-controls { flex-wrap: wrap; }

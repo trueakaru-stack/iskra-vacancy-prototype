@@ -29,7 +29,7 @@ import clsx from 'clsx';
 import { useMessages, useNumberFormatter } from '@neobook/i18n';
 import { tokenValues } from '@neobook/tokens';
 import { IconCheck, IconChevronDown } from '@neobook/icons';
-import { Button } from '../Button/index.js';
+import { Button } from '../Button/Button.js';
 import { Tag } from '../Tag/index.js';
 import { TruncatedLabel, truncatedLabelClass } from '../TextField/TruncatedLabel.js';
 import * as css from './Select.css.js';
