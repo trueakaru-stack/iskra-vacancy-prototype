@@ -149,13 +149,13 @@ export function App() {
         <div className="table-controls">
           <TextField className="search-field" size="lg" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} />
           <div className="region-wrap">
-            <CirclePlus className="region-icon" aria-hidden="true" />
+            <CirclePlus className="region-icon" size={18} aria-hidden="true" />
             <Select className="region-filter" size="lg" label="Фильтр региона" placeholder="Регион" selectedKey={region === 'all' ? null : region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
               <SelectItem id="all">Все регионы</SelectItem>
               {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
             </Select>
           </div>
-          <Button className="add-button" variant="primary" size="lg" leadingIcon={<CirclePlus size={16} aria-hidden="true" />} onPress={() => {
+          <Button className="add-button" variant="primary" size="lg" leadingIcon={<CirclePlus className="add-icon" size={18} aria-hidden="true" />} onPress={() => {
             if (editingId !== null) {
               setEditingId(null);
               setDraft(createEmptyDraft());
