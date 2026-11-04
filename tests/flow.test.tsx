@@ -29,20 +29,19 @@ async function goToQuestions() {
 }
 
 describe('создание вакансии', () => {
-  it('переключает два раздела меню и выделяет текущий', () => {
+  it('показывает оба пункта меню без отдельного экрана подключения', () => {
     mount();
     const menu = screen.getByRole('navigation', { name: 'Основное меню' });
     const vacancies = within(menu).getByRole('button', { name: 'Вакансии' });
     const connections = within(menu).getByRole('button', { name: 'Подключение вакансий' });
     expect(vacancies).toHaveAttribute('aria-current', 'page');
     expect(connections).not.toHaveAttribute('aria-current');
+    expect(connections).toBeDisabled();
+    expect(vacancies.querySelector('svg')).toBeNull();
+    expect(connections.querySelector('svg')).toBeNull();
     fireEvent.click(connections);
-    expect(screen.getByRole('heading', { name: 'Подключение вакансий' })).toBeInTheDocument();
-    expect(screen.getByRole('grid', { name: 'Подключение вакансий' })).toBeInTheDocument();
-    expect(connections).toHaveAttribute('aria-current', 'page');
-    expect(vacancies).not.toHaveAttribute('aria-current');
-    expect(screen.queryByRole('button', { name: /добавить вакансию/i })).not.toBeInTheDocument();
-    fireEvent.click(vacancies);
+    expect(screen.queryByRole('heading', { name: 'Подключение вакансий' })).not.toBeInTheDocument();
+    expect(screen.getByRole('grid', { name: 'Вакансии' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Список вакансий' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /добавить вакансию/i })).toBeInTheDocument();
   });
@@ -208,7 +207,6 @@ describe('создание вакансии', () => {
     fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Изучать потребности' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Основное меню' })).getByRole('button', { name: 'Подключение вакансий' }));
     const row = screen.getByRole('row', { name: /Дизайнер/ });
     await act(async () => { fireEvent.click(row); });
     const reopened = await screen.findByRole('dialog');
