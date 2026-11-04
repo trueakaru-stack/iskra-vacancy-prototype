@@ -106,13 +106,15 @@ button:disabled { cursor: not-allowed; }
   .brand-mark, button:not(.voice-button), .search-field div:has(> input), .fields div:has(> input),
   .fields textarea, .answer-field textarea, .choice-field > [role='group'] { border-radius: 26px; corner-shape: superellipse(2.25); }
 }
-.vacancy-steps { --nb-border-strong: var(--nb-border-default); align-items: center; margin-bottom: var(--nb-space-9); }
-.vacancy-steps > div { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 12px; text-align: start; }
-.vacancy-steps > div:not(:first-child) { flex: 1 1 auto; min-width: 0; }
-.vacancy-steps > div:not(:first-child)::before { position: static; flex: 1 1 0; width: auto; min-width: 0; max-width: 50px; height: 1px; margin-inline-start: 16px; margin-inline-end: 4px; }
-.vacancy-steps > div > :first-child { flex: none; font-family: 'Manrope', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
-.vacancy-steps > div > :nth-child(2) { flex: none; }
-.vacancy-steps > div > :nth-child(2) > span { font-family: 'Manrope', system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; }
+.sticky-steps { position: sticky; top: 0; z-index: 2; padding-bottom: var(--nb-space-9); background: var(--nb-bg-surface); }
+.sticky-steps::before { content: ''; position: absolute; inset-inline: 0; bottom: 100%; height: var(--nb-space-8); background: inherit; }
+.vacancy-steps { --nb-border-strong: var(--nb-border-default); align-items: center; margin-bottom: 0; }
+.vacancy-steps > :is(div, button) { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 12px; text-align: start; }
+.vacancy-steps > :is(div, button):not(:first-child) { flex: 1 1 auto; min-width: 0; }
+.vacancy-steps > :is(div, button):not(:first-child)::before { position: static; flex: 1 1 0; width: auto; min-width: 0; max-width: 50px; height: 1px; margin-inline-start: 16px; margin-inline-end: 4px; }
+.vacancy-steps > :is(div, button) > :first-child { flex: none; font-family: 'Manrope', system-ui, sans-serif; font-size: 14px; font-weight: 700; }
+.vacancy-steps > :is(div, button) > :nth-child(2) { flex: none; }
+.vacancy-steps > :is(div, button) > :nth-child(2) > span { font-family: 'Manrope', system-ui, sans-serif; font-size: 14px; line-height: 20px; font-weight: 700; white-space: nowrap; }
 .vacancy-steps > [data-state='complete'] > :nth-child(2) > span, .vacancy-steps > [data-state='current'] > :nth-child(2) > span { color: var(--nb-fg-default); }
 .vacancy-steps > [data-state='upcoming'] > :nth-child(2) > span { color: #7b7b7b; }
 .vacancy-steps > [data-state='current'] > :first-child { background: var(--nb-action-primary-bg); border-color: var(--nb-action-primary-bg); color: var(--nb-fg-on-primary); box-shadow: none; }
@@ -120,6 +122,7 @@ button:disabled { cursor: not-allowed; }
 .modal-content { animation: show-step 160ms ease-out; }
 .modal-content h2 { margin: 0 0 24px; color: var(--nb-fg-default); font-size: var(--nb-font-size-20); line-height: 1.4; font-weight: 600; }
 .fields { --nb-control-height-lg: 42px; display: grid; gap: 20px; }
+.fields textarea { resize: none; }
 .fields label, .fields .choice-field > span:first-child, .answer-field label, .salary-label { color: var(--nb-fg-secondary); }
 .choice-field > [role='group'] { min-height: var(--nb-control-height-lg); font-size: var(--nb-font-size-16); }
 .salary-field { display: grid; gap: var(--nb-field-gap-default); }
@@ -162,12 +165,13 @@ button:disabled { cursor: not-allowed; }
 .spinner { display: inline-flex; align-items: center; justify-content: center; animation: rotate 1s linear infinite; }
 @keyframes rotate { to { transform: rotate(360deg); } }
 @keyframes show-step { from { opacity: 0; } to { opacity: 1; } }
-.detail-heading { align-items: flex-start; justify-content: space-between; gap: 24px; }
+.detail-heading { --nb-control-height-lg: 42px; align-items: flex-start; justify-content: space-between; gap: 24px; }
 .detail-heading h1 { overflow-wrap: anywhere; }
 .detail-heading > button { flex: none; }
 .vacancy-detail { width: 100%; max-width: 1040px; margin-inline: auto; }
 .vacancy-detail .review-details { margin-bottom: 32px; }
-.detail-actions { display: flex; justify-content: flex-end; margin-bottom: 32px; }
+.detail-actions { --nb-control-height-lg: 42px; display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 32px; }
+.edit-actions { margin-top: 32px; }
 .voice-editor { margin-bottom: 32px; }
 .voice-editor h2, .description-sections h2 { margin: 0 0 16px; font-size: 20px; font-weight: 600; line-height: 1.4; }
 .voice-editor .modal-actions { margin-top: 32px; }

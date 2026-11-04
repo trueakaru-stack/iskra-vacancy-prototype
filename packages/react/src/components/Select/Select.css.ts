@@ -506,14 +506,13 @@ globalStyle(`${multiTag} button`, {
 });
 
 /**
- * Каретка: absolute, right 10px, top 8px, коробка 14×14px. Сверху, а не
- * по центру: когда теги переносятся на вторую строку, каретка остаётся
- * у первой.
+ * Каретка расположена по центру высоты поля, в том числе при переносе тегов.
  */
 export const multiCaret = style({
   position: 'absolute',
   insetInlineEnd: vars.fieldPaddingInline.md,
-  insetBlockStart: vars.space[4],
+  insetBlockStart: '50%',
+  transform: 'translateY(-50%)',
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',

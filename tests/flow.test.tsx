@@ -78,6 +78,7 @@ describe('создание вакансии голосом', () => {
   it('начинает с голосового ответа и не пропускает пробелы или ответ без должности', async () => {
     mount();
     const modal = await openCreation();
+    expect(within(modal).getByRole('heading', { name: 'Добавление вакансии' })).toBeInTheDocument();
     expect(within(modal).getByText('Назовите должность, регион и требуемый опыт работы.')).toBeInTheDocument();
     expect(within(modal).queryByLabelText(/Название вакансии/)).not.toBeInTheDocument();
     expect(within(modal).getByRole('button', { name: 'Начать запись' })).toBeInTheDocument();
@@ -102,10 +103,11 @@ describe('создание вакансии голосом', () => {
     expect(structureAnswer).toHaveBeenCalledTimes(2);
     await fillQuestions(modal);
     await within(modal).findByLabelText('Основные обязанности');
-    expect(within(modal).getByText('Москва')).toBeInTheDocument();
-    expect(within(modal).getByText('От 3 лет')).toBeInTheDocument();
-    expect(within(modal).getByText('от 120000 до 180000')).toBeInTheDocument();
-    for (const text of ['Полная занятость', 'Удалённо', '5/2', 'Трудовой договор']) expect(within(modal).getByText(text)).toBeInTheDocument();
+    expect(within(modal).getByLabelText('Регион')).toHaveValue('Москва');
+    expect(within(modal).getByRole('button', { name: /Опыт работы/ })).toHaveTextContent('От 3 лет');
+    expect(within(modal).getByLabelText('Зарплата от')).toHaveValue('120\u00a0000');
+    for (const text of ['Полная занятость', 'Удалённо', '5/2', 'Трудовой договор (ТК РФ)']) expect(within(modal).getByRole('gridcell', { name: text + ' Удалить ' + text })).toBeInTheDocument();
+    expect(generateDescription).toHaveBeenCalledWith('Дизайнер', { tasks: 'Ответ 1', project: 'Ответ 2', plans: 'Ответ 3', skills: 'Ответ 4' });
     expect(within(modal).queryByLabelText('Что предлагаем')).not.toBeInTheDocument();
     expect(within(modal).queryByLabelText('Будет преимуществом')).not.toBeInTheDocument();
   });
@@ -135,6 +137,37 @@ describe('создание вакансии голосом', () => {
     fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: ' ' } });
     expect(within(modal).getByRole('progressbar', { name: 'Заполненность ответов' })).toHaveAttribute('aria-valuenow', '0');
     expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+  });
+
+  it('переключает этапы кликом, сохраняет ответ и проверяет обязательные данные', async () => {
+    mount();
+    const modal = await goToQuestions();
+    const steps = within(modal).getByRole('group', { name: 'Этапы создания вакансии' });
+    expect(within(steps).queryByRole('button', { name: /Проверка/ })).not.toBeInTheDocument();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Мой ответ' } });
+    fireEvent.click(within(steps).getByRole('button', { name: /Основное/ }));
+    expect(within(modal).getByRole('heading', { name: 'Основное' })).toBeInTheDocument();
+    fireEvent.click(within(steps).getByRole('button', { name: /Описание/ }));
+    expect(await within(modal).findByLabelText('Ваш ответ')).toHaveValue('Мой ответ');
+    expect(structureAnswer).toHaveBeenCalledOnce();
+    fireEvent.click(within(steps).getByRole('button', { name: /Основное/ }));
+    vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: 'Москва', experience: '' });
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Только Москва' } });
+    fireEvent.click(within(steps).getByRole('button', { name: /Описание/ }));
+    expect(await within(modal).findByRole('alert')).toHaveTextContent('Назовите должность');
+    expect(within(modal).getByRole('heading', { name: 'Основное' })).toBeInTheDocument();
+  });
+
+  it('возвращает к проверке через степпер без повторного запроса и потери правок', async () => {
+    mount();
+    const modal = await goToQuestions();
+    await fillQuestions(modal);
+    fireEvent.change(await within(modal).findByLabelText('Основные обязанности'), { target: { value: 'Моя редакция' } });
+    const steps = within(modal).getByRole('group', { name: 'Этапы создания вакансии' });
+    fireEvent.click(within(steps).getByRole('button', { name: /Основное/ }));
+    fireEvent.click(within(steps).getByRole('button', { name: /Проверка/ }));
+    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Моя редакция');
+    expect(generateDescription).toHaveBeenCalledOnce();
   });
 
   it('показывает индикатор внутри основной кнопки до ответа сервиса', async () => {
@@ -179,6 +212,62 @@ describe('создание вакансии голосом', () => {
     fireEvent.click(screen.getByRole('button', { name: 'К вакансиям' }));
     await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
     expect(screen.getByRole('article', { name: 'Описание вакансии' })).toHaveTextContent('Исследования');
+  });
+
+  it('позволяет исправить реквизиты на проверке и сохраняет их после возврата к вопросам', async () => {
+    mount();
+    const modal = await goToQuestions(true);
+    await fillQuestions(modal);
+    const title = await within(modal).findByLabelText(/Название вакансии/);
+    fireEvent.change(title, { target: { value: 'Аналитик' } });
+    fireEvent.change(within(modal).getByLabelText('Регион'), { target: { value: 'Казань' } });
+    fireEvent.click(within(modal).getByRole('button', { name: /Опыт работы/ }));
+    fireEvent.click(await screen.findByRole('option', { name: 'Более 6 лет' }));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Создать описание' }));
+    expect(await within(modal).findByLabelText(/Название вакансии/)).toHaveValue('Аналитик');
+    expect(within(modal).getByRole('button', { name: /Опыт работы/ })).toHaveTextContent('Более 6 лет');
+    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+    expect(await screen.findByRole('heading', { name: 'Аналитик' })).toBeInTheDocument();
+    expect(screen.getByRole('article')).toHaveTextContent('Казань');
+  });
+
+  it('не сохраняет пустое название и перевёрнутый диапазон при ручном редактировании', async () => {
+    mount(); await createSaved();
+    fireEvent.click(screen.getByRole('button', { name: 'Редактировать' }));
+    const title = screen.getByLabelText(/Название вакансии/);
+    fireEvent.change(title, { target: { value: '  ' } });
+    expect(screen.getByRole('button', { name: 'Сохранить изменения' })).toBeDisabled();
+    fireEvent.change(title, { target: { value: 'Новая должность' } });
+    const salary = screen.getByLabelText('Зарплата от');
+    fireEvent.change(salary, { target: { value: '200000' } });
+    fireEvent.blur(salary);
+    expect(screen.getByRole('alert')).toHaveTextContent('Сумма «от»');
+    expect(screen.getByRole('button', { name: 'Сохранить изменения' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
+    expect(screen.getByRole('heading', { name: 'Дизайнер' })).toBeInTheDocument();
+    expect(screen.getByRole('article')).toHaveTextContent('от 120000 до 180000');
+  });
+
+  it('сохраняет ручные поля и текст без запроса к модели, затем применяет голосовую правку к ним', async () => {
+    mount(); await createSaved();
+    fireEvent.click(screen.getByRole('button', { name: 'Редактировать' }));
+    fireEvent.change(screen.getByLabelText(/Название вакансии/), { target: { value: 'Редактор' } });
+    fireEvent.change(screen.getByLabelText('Регион'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Основные обязанности'), { target: { value: 'Мой текст' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить изменения' }));
+    expect(reviseVacancy).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Редактор' })).toBeInTheDocument();
+    expect(screen.getByRole('article')).not.toHaveTextContent('Москва');
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить голосом' }));
+    fireEvent.change(screen.getByLabelText('Ваш ответ'), { target: { value: 'Добавь HTML' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Показать изменения' }));
+    await screen.findByRole('heading', { name: 'Проверка изменений' });
+    expect(reviseVacancy).toHaveBeenCalledWith('Добавь HTML', expect.objectContaining({ title: 'Редактор', region: '' }), expect.objectContaining({ tasks: 'Мой текст' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить изменения' }));
+    fireEvent.click(screen.getByRole('button', { name: 'К вакансиям' }));
+    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Редактор/ })); });
+    expect(screen.getByRole('article')).toHaveTextContent('Мой текст');
   });
 
   it('показывает голосовые правки до сохранения и позволяет отменить их', async () => {

@@ -10,6 +10,7 @@ import { Textarea } from '@neobook/react/components/Textarea/Textarea';
 import { generateDescription, reviseVacancy, structureAnswer } from './generation';
 import { useSpeech } from './useSpeech';
 import { VoiceAnswer } from './VoiceAnswer';
+import { VacancyFields } from './VacancyFields';
 import { answerProgress, appendTranscript, CONDITION_FIELDS, createEmptyDraft, DEMO_VACANCIES, draftError, filterVacancies, isFilled, MAX_ANSWER_LENGTH, QUESTIONS, toVacancyRow, type Answers, type IntakeStage, type VacancyDraft, type VacancyRevision, type VacancyRow, type VacancySections } from './vacancy';
 
 type Phase = 'main' | 'conditions' | 'questions' | 'review';
@@ -64,6 +65,7 @@ export function App() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<VacancyDraft>(createEmptyDraft);
   const [sections, setSections] = useState<VacancySections | null>(null);
+  const [generatedInput, setGeneratedInput] = useState<{ title: string; answers: Answers } | null>(null);
   const [sectionEdits, setSectionEdits] = useState<Partial<VacancySections>>({});
   const [phase, setPhase] = useState<Phase>('main');
   const [question, setQuestion] = useState(0);
@@ -72,6 +74,7 @@ export function App() {
   const [operation, setOperation] = useState<'main' | 'conditions' | 'generate' | 'revise' | null>(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
+  const [manualEdit, setManualEdit] = useState<SavedVacancy | null>(null);
   const [editText, setEditText] = useState('');
   const [revision, setRevision] = useState<VacancyRevision | null>(null);
 
@@ -92,14 +95,14 @@ export function App() {
   const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort), [vacancies, query, region, sort]);
   const selectedRow = vacancies.find((row) => row.id === selectedId);
   const saved = selectedId ? savedDrafts[selectedId] : undefined;
-  const visibleDraft = saved ? { ...saved.draft, ...revision?.fields } : { ...createEmptyDraft(), title: selectedRow?.title ?? '', region: selectedRow?.region ?? '' };
-  const visibleSections = saved ? { ...saved.sections, ...revision?.sections } : null;
+  const visibleDraft = manualEdit?.draft ?? (saved ? { ...saved.draft, ...revision?.fields } : { ...createEmptyDraft(), title: selectedRow?.title ?? '', region: selectedRow?.region ?? '' });
+  const visibleSections = manualEdit?.sections ?? (saved ? { ...saved.sections, ...revision?.sections } : null);
   const currentAnswer = phase === 'main' || phase === 'conditions' ? intake[phase] : draft.answers[QUESTIONS[question].id];
   const operationLabel = operation === 'generate' ? 'Создаём описание' : operation === 'revise' ? 'Готовим изменения' : 'Обрабатываем ответ';
 
   const leaveDetails = () => {
     if (busy) return;
-    setSelectedId(null); setEditing(false); setRevision(null); setEditText(''); setError(''); speech.reset();
+    setSelectedId(null); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset();
   };
   const moveBack = () => {
     speech.reset(); setError('');
@@ -108,6 +111,41 @@ export function App() {
       if (question > 0) setQuestion((current) => current - 1);
       else setPhase('conditions');
     } else if (phase === 'review') setPhase('questions');
+  };
+  const showReview = async (source: VacancyDraft, regenerate = false) => {
+    if (!QUESTIONS.every(({ id }) => isFilled(source.answers[id]) && source.answers[id].length <= MAX_ANSWER_LENGTH)) return;
+    if (!regenerate && sections && generatedInput?.title === source.title && QUESTIONS.every(({ id }) => generatedInput.answers[id] === source.answers[id])) { setPhase('review'); return; }
+    setOperation('generate');
+    try {
+      const generated = await generateDescription(source.title, source.answers);
+      setSections({ ...generated, ...sectionEdits }); setGeneratedInput({ title: source.title, answers: { ...source.answers } }); setPhase('review');
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось подготовить описание.'); }
+    finally { setOperation(null); }
+  };
+  const canVisitStep = (index: number) => index === 0 || (isFilled(intake.main) && (index !== 3 || QUESTIONS.every(({ id }) => isFilled(draft.answers[id]) && draft.answers[id].length <= MAX_ANSWER_LENGTH)));
+  const navigateStep = async (index: number) => {
+    if (busy || !canVisitStep(index) || index === PHASES.indexOf(phase)) return;
+    speech.reset(); setError('');
+    if (index < PHASES.indexOf(phase)) { setPhase(PHASES[index]); if (index === 2) setQuestion(0); return; }
+    let next = draft;
+    try {
+      for (const stage of (index > 1 ? ['main', 'conditions'] : ['main']) as IntakeStage[]) {
+        if (parsedIntake[stage] === intake[stage]) continue;
+        setOperation(stage);
+        const empty = createEmptyDraft();
+        const fields = stage === 'conditions' && !isFilled(intake.conditions)
+          ? Object.fromEntries(CONDITION_FIELDS.map((key) => [key, empty[key]]))
+          : await structureAnswer(stage, intake[stage]);
+        next = { ...next, ...fields };
+        const invalid = draftError(next);
+        if (invalid) { setPhase(stage); throw new Error(invalid); }
+        setDraft(next); setParsedIntake((current) => ({ ...current, [stage]: intake[stage] }));
+      }
+      if (draftError(next)) { setPhase('main'); throw new Error(draftError(next)); }
+      if (index === 3) await showReview(next);
+      else { setPhase(PHASES[index]); if (index === 2) setQuestion(0); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось обработать ответ. Попробуйте ещё раз.'); }
+    finally { setOperation(null); }
   };
   const moveForward = async () => {
     speech.reset(); setError('');
@@ -133,12 +171,7 @@ export function App() {
     }
     if (phase !== 'questions' || !isFilled(currentAnswer)) return;
     if (question < 3) { setQuestion((current) => current + 1); return; }
-    setOperation('generate');
-    try {
-      const generated = await generateDescription(draft.title, draft.answers);
-      setSections({ ...generated, ...sectionEdits }); setPhase('review');
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось подготовить описание.'); }
-    finally { setOperation(null); }
+    await showReview(draft, true);
   };
   const save = () => {
     if (!sections || draftError(draft)) return;
@@ -146,17 +179,20 @@ export function App() {
     setSavedDrafts((current) => ({ ...current, [id]: { draft, sections, sectionEdits } }));
     setVacancies((current) => [toVacancyRow(draft, id), ...current]);
     setSelectedId(id); setEditing(false); setRevision(null); setEditText('');
-    setDraft(createEmptyDraft()); setSections(null); setSectionEdits({});
+    setDraft(createEmptyDraft()); setSections(null); setGeneratedInput(null); setSectionEdits({});
     setIntake({ main: '', conditions: '' }); setParsedIntake({ main: null, conditions: null });
     setPhase('main'); setQuestion(0); setOpen(false);
+  };
+  const saveChanges = (updated: SavedVacancy) => {
+    if (!selectedId || draftError(updated.draft)) return;
+    setSavedDrafts((current) => ({ ...current, [selectedId]: updated }));
+    setVacancies((current) => current.map((row) => row.id === selectedId ? { ...row, title: updated.draft.title.trim(), region: updated.draft.region.trim() } : row));
+    setManualEdit(null); setEditing(false); setRevision(null); setEditText(''); setError(''); speech.reset();
   };
   const submitEdit = async () => {
     if (!saved || !selectedId || !isFilled(editText) || editText.length > MAX_ANSWER_LENGTH) return;
     if (revision) {
-      const updated = { draft: visibleDraft, sections: visibleSections ?? saved.sections, sectionEdits: { ...saved.sectionEdits, ...revision.sections } };
-      setSavedDrafts((current) => ({ ...current, [selectedId]: updated }));
-      setVacancies((current) => current.map((row) => row.id === selectedId ? toVacancyRow(updated.draft, selectedId) : row));
-      setEditing(false); setRevision(null); setEditText(''); setError(''); speech.reset();
+      saveChanges({ draft: visibleDraft, sections: visibleSections ?? saved.sections, sectionEdits: { ...saved.sectionEdits, ...revision.sections } });
       return;
     }
     speech.reset(); setError(''); setOperation('revise');
@@ -185,8 +221,21 @@ export function App() {
       {selectedRow ? <>
         <div className="page-heading detail-heading"><h1>{visibleDraft.title}</h1><Button variant="secondary" size="lg" onPress={leaveDetails} isDisabled={busy}>К вакансиям</Button></div>
         <article className="vacancy-detail" aria-label="Описание вакансии">
+          {manualEdit ? <>
+            <div className="fields">
+              <VacancyFields value={manualEdit.draft} onChange={(patch) => setManualEdit((current) => current ? { ...current, draft: { ...current.draft, ...patch } } : current)} />
+              {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={manualEdit.sections[id]} onChange={(value) => setManualEdit((current) => current ? { ...current, sections: { ...current.sections, [id]: value }, sectionEdits: { ...current.sectionEdits, [id]: value } } : current)} />)}
+            </div>
+            <div className="modal-actions edit-actions">
+              <Button variant="secondary" size="lg" onPress={() => setManualEdit(null)}>Отмена</Button>
+              <Button variant="primary" size="lg" isDisabled={!!draftError(manualEdit.draft)} onPress={() => saveChanges(manualEdit)}>Сохранить изменения</Button>
+            </div>
+          </> : <>
           <Details draft={visibleDraft} includeTitle={false} />
-          {saved && !editing && <div className="detail-actions"><Button variant="primary" size="lg" onPress={() => { setEditing(true); setError(''); speech.reset(); }}>Изменить голосом</Button></div>}
+          {saved && !editing && <div className="detail-actions">
+            <Button variant="secondary" size="lg" onPress={() => { setManualEdit({ ...saved, draft: { ...saved.draft }, sections: { ...saved.sections }, sectionEdits: { ...saved.sectionEdits } }); setError(''); speech.reset(); }}>Редактировать</Button>
+            <Button variant="primary" size="lg" onPress={() => { setEditing(true); setError(''); speech.reset(); }}>Изменить голосом</Button>
+          </div>}
           {editing && <section className="voice-editor" aria-labelledby="edit-heading">
             <h2 id="edit-heading">{revision ? 'Проверка изменений' : 'Что изменить?'}</h2>
             <VoiceAnswer value={editText} onChange={(value) => { setEditText(value); setRevision(null); }} speech={speech} progress={100} disabled={operation !== null} />
@@ -198,6 +247,7 @@ export function App() {
             </div>
           </section>}
           {visibleSections ? <div className="description-sections">{QUESTIONS.map(({ id, section }) => <section key={id}><h2>{section}</h2><p>{visibleSections[id] || '—'}</p></section>)}</div> : <p className="empty-description">Описание вакансии не добавлено.</p>}
+          </>}
         </article>
       </> : <>
         <div className="page-heading"><h1>Вакансии</h1></div>
@@ -217,18 +267,18 @@ export function App() {
             <DataTableColumn id="responses" allowsSorting width="13%">Отклики</DataTableColumn>
             <DataTableColumn id="expires" allowsSorting width="25%">Истекает</DataTableColumn>
           </DataTableHeader>
-          <DataTableBody items={filtered} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => <DataTableRow id={item.id} onAction={() => { setSelectedId(item.id); setEditing(false); setRevision(null); setEditText(''); setError(''); speech.reset(); }}>
+          <DataTableBody items={filtered} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => <DataTableRow id={item.id} onAction={() => { setSelectedId(item.id); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); }}>
             <DataTableCell>{item.title}</DataTableCell><DataTableCell>{item.region || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
           </DataTableRow>}</DataTableBody>
         </DataTable>
       </>}
       {operation && !open && <span className="visually-hidden" role="status">{operationLabel}</span>}
     </main>
-    <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавить вакансию" className="vacancy-modal" overlayClassName="vacancy-modal-overlay" footer={<div className="modal-actions">
+    <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавление вакансии" className="vacancy-modal" overlayClassName="vacancy-modal-overlay" footer={<div className="modal-actions">
       {phase !== 'main' && <Button variant="secondary" size="lg" onPress={moveBack} isDisabled={busy}>Назад</Button>}
       {phase === 'review' ? <Button variant="primary" size="lg" onPress={save} isDisabled={!!draftError(draft)}>Сохранить</Button> : <Button className="generation-button" variant="primary" size="lg" aria-label={operation ? operationLabel : undefined} onPress={() => void moveForward()} isPending={operation !== null} isDisabled={speech.busy || currentAnswer.length > MAX_ANSWER_LENGTH || ((phase === 'main' || phase === 'questions') && !isFilled(currentAnswer))}>{phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}</Button>}
     </div>}>
-      <Stepper className="vacancy-steps" role="group" aria-label="Этапы создания вакансии" steps={STAGES} current={PHASES.indexOf(phase)} />
+      <div className="sticky-steps"><Stepper className="vacancy-steps" role="group" aria-label="Этапы создания вакансии" steps={STAGES.map((step, index) => ({ ...step, state: index === PHASES.indexOf(phase) ? 'current' : index < PHASES.indexOf(phase) ? 'complete' : canVisitStep(index) ? 'available' : 'upcoming' }))} current={PHASES.indexOf(phase)} onStepPress={busy ? undefined : (index) => void navigateStep(index)} /></div>
       {operation && <span className="visually-hidden" role="status">{operationLabel}</span>}
       <section key={phase + '-' + question} className="modal-content" aria-labelledby="section-title">
         <h2 id="section-title">{phase === 'main' ? 'Основное' : phase === 'conditions' ? 'Условия' : phase === 'questions' ? 'Описание вакансии' : 'Проверка описания'}</h2>
@@ -242,7 +292,7 @@ export function App() {
           {currentAnswer.length > MAX_ANSWER_LENGTH && <p className="generation-error" role="alert">Сократите ответ до 4000 символов, чтобы продолжить.</p>}
           {error && <p className="generation-error" role="alert">{error}</p>}
         </div> : sections && <div className="fields">
-          <Details draft={draft} />
+          <VacancyFields value={draft} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
           {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={sections[id]} onChange={(value) => { setSections((current) => current ? { ...current, [id]: value } : current); setSectionEdits((current) => ({ ...current, [id]: value })); }} />)}
         </div>}
       </section>

@@ -30,6 +30,19 @@ describe('генерация описания', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
+  it('передаёт должность для контекстного черновика, исключая посторонние данные запроса', async () => {
+    const generic = { tasks: 'Выполнять ежедневные задачи', project: 'Проект пока не определён', plans: 'Планы пока неизвестны', skills: 'Инструменты ещё не выбраны' };
+    const run = vi.fn().mockResolvedValue({ response: generic });
+    const environment = { AI: { run }, ALLOWED_ORIGIN: 'https://example.com' };
+    const first = await handleRequest(request({ title: 'Дизайнер', answers: generic, region: 'Москва' }), environment);
+    const second = await handleRequest(request({ title: 'Бухгалтер', answers: generic, skills: 'Excel' }), environment);
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({ sections: generic });
+    expect(JSON.parse(run.mock.calls[0][1].messages[1].content)).toEqual({ title: 'Дизайнер', answers: generic });
+    expect(JSON.parse(run.mock.calls[1][1].messages[1].content)).toEqual({ title: 'Бухгалтер', answers: generic });
+  });
+
   it('принимает максимально длинные ответы на русском', async () => {
     const long = 'а'.repeat(4000);
     const run = vi.fn().mockResolvedValue({ response: JSON.stringify(sections) });
