@@ -50,3 +50,37 @@ describe('генерация описания', () => {
     expect(run).not.toHaveBeenCalled();
   });
 });
+
+describe('распознавание записи', () => {
+  it('принимает звук и возвращает только распознанный текст', async () => {
+    const run = vi.fn().mockResolvedValue({ text: '  Тестовый ответ  ' });
+    const audio = new Request('https://worker.example/transcribe', {
+      method: 'POST', headers: { 'Content-Type': 'audio/webm', Origin: 'https://example.com' }, body: 'fake audio',
+    });
+    const result = await handleRequest(audio, { AI: { run }, ALLOWED_ORIGIN: 'https://example.com' });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ text: 'Тестовый ответ' });
+    expect(run).toHaveBeenCalledWith('@cf/openai/whisper-large-v3-turbo', expect.objectContaining({ language: 'ru', audio: btoa('fake audio') }));
+    expect(result.headers.get('Cache-Control')).toBe('no-store');
+  });
+
+  it('отклоняет слишком большой звук до вызова модели', async () => {
+    const run = vi.fn();
+    const audio = new Request('https://worker.example/transcribe', {
+      method: 'POST', headers: { 'Content-Type': 'audio/webm' }, body: new Uint8Array(2 * 1024 * 1024 + 1),
+    });
+    const result = await handleRequest(audio, { AI: { run } });
+    expect(result.status).toBe(400);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('отклоняет неподдерживаемый формат', async () => {
+    const run = vi.fn();
+    const audio = new Request('https://worker.example/transcribe', {
+      method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: 'fake audio',
+    });
+    const result = await handleRequest(audio, { AI: { run } });
+    expect(result.status).toBe(415);
+    expect(run).not.toHaveBeenCalled();
+  });
+});

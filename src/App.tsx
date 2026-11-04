@@ -174,7 +174,7 @@ export function App() {
         <p className="table-count">Всего: {filtered.length}</p>
       </main>
 
-      <Modal isOpen={open} onOpenChange={(next) => { if (!busy) setOpen(next); }} isDismissable={!busy} backdrop="blur" size="lg" title="Добавить вакансию" className="vacancy-modal" footer={
+      <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавить вакансию" className="vacancy-modal" footer={
         <div className="modal-actions">
           {phase !== 'main' && <Button variant="secondary" onPress={moveBack} isDisabled={busy}>Назад</Button>}
           {phase === 'review'
@@ -207,11 +207,11 @@ export function App() {
             <p className="question-count">Вопрос {question + 1} из 4</p>
             <p className="question-text">{QUESTIONS[question].text}</p>
             <div className="answer-wrap">
-              <Textarea className="answer-field" label="Ваш ответ" placeholder="Введите ответ или расскажите голосом" rows={6} value={draft.answers[QUESTIONS[question].id]} onChange={(value) => setAnswer(QUESTIONS[question].id, value)} />
+              <Textarea className="answer-field" label="Ваш ответ" placeholder="Введите ответ или скажите голосом" rows={5} value={draft.answers[QUESTIONS[question].id]} onChange={(value) => setAnswer(QUESTIONS[question].id, value)} />
               <div className="voice-control">
                 {speech.state === 'listening' && <span className="voice-level" aria-hidden="true">{[0.45, 0.8, 1, 0.65, 0.35].map((weight, index) => <span key={index} style={{ transform: `scaleY(${Math.max(0.18, speech.level * weight)})` }} />)}</span>}
                 <div className="voice-ring"><ProgressRing size="sm" value={answerProgress(draft.answers)} aria-label="Заполненность ответов" valueLabel={<span aria-hidden="true" />} />
-                  <Button variant="primary" size="sm" isIconOnly className="voice-button" aria-label={speech.state === 'listening' ? 'Остановить запись' : speech.state === 'error' ? 'Повторить запись' : 'Начать запись'} isDisabled={speech.state === 'starting' || speech.state === 'processing'} onPress={() => speech.state === 'listening' ? speech.stop() : void speech.start()}>
+                  <Button variant="ghost" size="sm" isIconOnly className="voice-button" aria-label={speech.state === 'listening' ? 'Остановить запись' : speech.canRetry ? 'Повторить распознавание' : speech.state === 'error' ? 'Повторить запись' : 'Начать запись'} isDisabled={speech.state === 'starting' || speech.state === 'processing'} onPress={() => speech.state === 'listening' ? speech.stop() : speech.canRetry ? speech.retry() : void speech.start()}>
                     {speech.state === 'listening' ? <Square size={14} fill="currentColor" /> : speech.state === 'processing' || speech.state === 'starting' ? <LoaderCircle size={17} className="spinner" /> : speech.state === 'success' ? <Check size={18} /> : speech.state === 'error' ? <CircleAlert size={18} /> : <Mic size={18} />}
                   </Button>
                 </div>

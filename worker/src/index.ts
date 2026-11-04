@@ -1,7 +1,9 @@
 import { MAX_ANSWER_LENGTH, QUESTIONS, type Answers, type VacancySections } from '../../src/vacancy';
 
 const MODEL = '@cf/qwen/qwen3-30b-a3b-fp8';
+const SPEECH_MODEL = '@cf/openai/whisper-large-v3-turbo';
 const MAX_BODY_BYTES = 50_000;
+const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
 
 interface Environment {
   AI: { run: (model: string, options: Record<string, unknown>) => Promise<unknown> };
@@ -72,6 +74,61 @@ function response(status: number, body: Record<string, unknown>, origin?: string
   return new Response(JSON.stringify(body), { status, headers });
 }
 
+async function readAudio(request: Request): Promise<Uint8Array | null> {
+  if (!request.body) return null;
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let length = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    length += value.byteLength;
+    if (length > MAX_AUDIO_BYTES) {
+      await reader.cancel();
+      return null;
+    }
+    chunks.push(value);
+  }
+  if (!length) return null;
+  const audio = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of chunks) {
+    audio.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return audio;
+}
+
+async function transcribe(request: Request, env: Environment, origin?: string): Promise<Response> {
+  const type = request.headers.get('Content-Type')?.split(';', 1)[0].toLowerCase();
+  if (!type || !['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/x-wav'].includes(type)) {
+    return response(415, { error: 'Формат записи не поддерживается.' }, origin);
+  }
+  const declaredLength = Number(request.headers.get('Content-Length'));
+  if (declaredLength > MAX_AUDIO_BYTES) return response(413, { error: 'Запись слишком длинная.' }, origin);
+  const audio = await readAudio(request);
+  if (!audio) return response(400, { error: 'Запись пуста или слишком длинная.' }, origin);
+
+  try {
+    let binary = '';
+    for (let offset = 0; offset < audio.length; offset += 8192) {
+      binary += String.fromCharCode(...audio.subarray(offset, offset + 8192));
+    }
+    const output = object(await env.AI.run(SPEECH_MODEL, {
+      audio: btoa(binary),
+      task: 'transcribe',
+      language: 'ru',
+      vad_filter: true,
+      condition_on_previous_text: false,
+    }));
+    if (typeof output?.text !== 'string') throw new Error('Invalid transcription response');
+    const text = output.text.trim();
+    return response(200, { text }, origin);
+  } catch {
+    return response(503, { error: 'Не удалось распознать запись. Попробуйте ещё раз.' }, origin);
+  }
+}
+
 export async function handleRequest(request: Request, env: Environment): Promise<Response> {
   const origin = request.headers.get('Origin');
   const ownOrigin = new URL(request.url).origin;
@@ -89,7 +146,9 @@ export async function handleRequest(request: Request, env: Environment): Promise
     if (corsOrigin) headers.set('Access-Control-Allow-Origin', corsOrigin);
     return new Response(null, { status: 204, headers });
   }
-  if (request.method !== 'POST' || new URL(request.url).pathname !== '/generate') {
+  const pathname = new URL(request.url).pathname;
+  if (request.method === 'POST' && pathname === '/transcribe') return transcribe(request, env, corsOrigin);
+  if (request.method !== 'POST' || pathname !== '/generate') {
     return response(404, { error: 'Адрес не найден.' }, corsOrigin);
   }
   if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) {
@@ -123,4 +182,5 @@ export async function handleRequest(request: Request, env: Environment): Promise
   }
 }
 
-export default { fetch: handleRequest };
+const worker = { fetch: handleRequest };
+export default worker;
