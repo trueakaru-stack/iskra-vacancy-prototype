@@ -70,16 +70,16 @@ button:disabled { cursor: not-allowed; }
 .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .modal-actions { width: 100%; display: flex; justify-content: flex-end; gap: 8px; }
 .question-count { display: inline-block; color: oklch(14.5% 0 0); background: oklch(93% 0 0); border-radius: var(--nb-radius-lg); margin: 0 0 6px; padding: 3px 8px; font-size: 13px; line-height: 1.2; }
-.question-text { color: oklch(14.5% 0 0); margin: 0 0 26px; font-size: 18px; line-height: 1.25; font-weight: 400; }
+.question-text { max-width: 95%; color: oklch(14.5% 0 0); margin: 0 0 26px; font-size: 18px; line-height: 1.25; font-weight: 400; }
 .answer-wrap { position: relative; }
 .answer-field label { font-size: 14px; font-weight: 400; }
-.answer-field textarea { height: 114px; min-height: 114px; padding-bottom: 60px; border-radius: var(--nb-radius-lg); font-size: 14px; resize: vertical; }
+.answer-field textarea { height: 114px; min-height: 114px; padding-bottom: 60px; border-radius: var(--nb-radius-lg); font-size: 14px; resize: none; }
 .voice-control { position: absolute; bottom: 10px; right: 10px; display: flex; align-items: center; gap: 10px; }
 .voice-ring { --nb-bg-muted: oklch(88% 0 0); display: grid; place-items: center; position: relative; }
 .voice-ring > * { grid-area: 1 / 1; }
 .voice-ring [role='progressbar'][aria-valuenow='0'] svg circle:last-child { visibility: hidden; }
-.voice-button { z-index: 1; border-radius: 50%; color: oklch(14.5% 0 0); }
-.voice-ring .voice-button svg { width: var(--nb-icon-size-lg); height: var(--nb-icon-size-lg); }
+.voice-button { z-index: 1; width: 44px; height: 44px; border-radius: 50%; color: oklch(14.5% 0 0); }
+.voice-ring .voice-button svg { width: var(--nb-font-size-24); height: var(--nb-font-size-24); }
 .voice-level { display: flex; align-items: center; gap: 3px; height: 28px; }
 .voice-level span { display: block; width: 3px; height: 24px; border-radius: 2px; background: oklch(20.5% 0 0); transition: transform 80ms linear; }
 .voice-message { color: oklch(45% 0 0); font-size: 13px; margin: 10px 0 0; }
