@@ -65,7 +65,7 @@ button:disabled { cursor: not-allowed; }
 .vacancy-table td { font-size: 15px; }
 .vacancy-table td:first-child { font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
 .table-count { margin: 20px 0 0 2px; color: oklch(55.6% 0 0); font-size: 13px; }
-.vacancy-modal { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); border-radius: 24px; }
+.vacancy-modal { max-width: calc(100vw - 32px); max-height: calc(100dvh - 32px); border-radius: 18px; }
 .vacancy-modal > [role='dialog'] { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); }
 .vacancy-modal > [role='dialog'] > :first-child { border: 0; padding: var(--nb-space-9) var(--nb-space-9) 0; }
 .vacancy-modal > [role='dialog'] > :first-child > h2 { color: var(--nb-fg-default); font-size: var(--nb-font-size-24); line-height: 1.25; }
@@ -75,7 +75,8 @@ button:disabled { cursor: not-allowed; }
 .vacancy-modal > [role='dialog'] > :last-child { background: transparent; border: 0; padding: 0 var(--nb-space-9) var(--nb-space-9); }
 .vacancy-modal textarea { resize: none; }
 @supports (corner-shape: superellipse(2.25)) {
-  .vacancy-modal { border-radius: 52px; corner-shape: superellipse(2.25); }
+  /* Контур Product Catalog уменьшен по видимой части пользовательского референса. */
+  .vacancy-modal { border-radius: 39px; corner-shape: superellipse(2.25); }
 }
 .vacancy-steps { margin-bottom: var(--nb-space-9); }
 .modal-content { animation: show-step 160ms ease-out; }
