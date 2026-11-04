@@ -64,8 +64,9 @@ button:disabled { cursor: not-allowed; }
 .brand-copy strong { font-size: 16px; font-weight: 700; }
 .brand-copy span { color: oklch(36% 0 0); font-weight: 600; }
 .brand-chevron { margin-left: auto; flex: none; color: var(--nb-fg-secondary); }
-.sidebar nav { margin-top: 36px; }
-.nav-current { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 10px; color: oklch(36% 0 0); font-size: 16px; }
+.sidebar nav { display: grid; gap: 4px; margin-top: 36px; }
+.sidebar .nav-item { width: 100%; justify-content: flex-start; min-height: 42px; padding-inline: 10px; gap: 10px; color: var(--nb-fg-secondary); font-size: 16px; font-weight: 500; }
+.sidebar .nav-item[aria-current='page'] { color: var(--nb-fg-default); background: var(--nb-bg-hover); font-weight: 600; }
 .content { display: flex; flex-direction: column; min-width: 0; flex: 1; padding: 32px 32px 32px; }
 .page-heading { display: flex; align-items: center; margin-bottom: 28px; }
 .page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 650; }

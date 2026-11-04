@@ -60,6 +60,7 @@ function orderedVacancies(rows: VacancyRow[], sort: Sort): VacancyRow[] {
 }
 
 export function App() {
+  const [page, setPage] = useState<'vacancies' | 'connections'>('vacancies');
   const [vacancies, setVacancies] = useState<VacancyRow[]>([...DEMO_VACANCIES]);
   const [savedDrafts, setSavedDrafts] = useState<Record<string, { draft: VacancyDraft; sections: VacancySections; sectionEdits: Partial<VacancySections> }>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -163,11 +164,14 @@ export function App() {
           <span className="brand-copy"><strong>Искра</strong><span>Лаборатория ПИИ</span></span>
           <ChevronsUpDown className="brand-chevron" aria-hidden="true" size={16} />
         </div>
-        <nav aria-label="Основное меню"><div className="nav-current" aria-current="page"><List size={17} aria-hidden="true" />Вакансии</div></nav>
+        <nav aria-label="Основное меню">
+          <Button className="nav-item" variant="ghost" leadingIcon={<List size={17} aria-hidden="true" />} aria-current={page === 'vacancies' ? 'page' : undefined} onPress={() => setPage('vacancies')}>Вакансии</Button>
+          <Button className="nav-item" variant="ghost" leadingIcon={<List size={17} aria-hidden="true" />} aria-current={page === 'connections' ? 'page' : undefined} onPress={() => setPage('connections')}>Подключение вакансий</Button>
+        </nav>
       </aside>
 
       <main className="content">
-        <div className="page-heading"><h1>Список вакансий</h1></div>
+        <div className="page-heading"><h1>{page === 'connections' ? 'Подключение вакансий' : 'Список вакансий'}</h1></div>
         <div className="table-controls">
           <TextField className="search-field" size="lg" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} />
           <div className="region-wrap">
@@ -177,7 +181,7 @@ export function App() {
               {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
             </Select>
           </div>
-          <Button className="add-button" variant="primary" size="lg" leadingIcon={<CirclePlus className="add-icon" size={18} aria-hidden="true" />} onPress={() => {
+          {page === 'vacancies' && <Button className="add-button" variant="primary" size="lg" leadingIcon={<CirclePlus className="add-icon" size={18} aria-hidden="true" />} onPress={() => {
             if (editingId !== null) {
               setEditingId(null);
               setDraft(createEmptyDraft());
@@ -187,9 +191,9 @@ export function App() {
               setQuestion(0);
             }
             setOpen(true);
-          }}>Добавить вакансию</Button>
+          }}>Добавить вакансию</Button>}
         </div>
-        <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
+        <DataTable aria-label={page === 'connections' ? 'Подключение вакансий' : 'Вакансии'} className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
           <DataTableHeader>
             <DataTableColumn id="title" isRowHeader allowsSorting width="51%" minWidth={280}>Название</DataTableColumn>
             <DataTableColumn id="region" allowsSorting width="11%">Регион</DataTableColumn>
