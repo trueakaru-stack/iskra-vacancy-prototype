@@ -29,6 +29,28 @@ async function goToQuestions() {
 }
 
 describe('создание вакансии', () => {
+  it('показывает нужные колонки и меняет порядок вакансий при сортировке откликов', () => {
+    mount();
+    expect(within(screen.getByRole('navigation', { name: 'Основное меню' })).getByText('Вакансии')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Список вакансий' })).toBeInTheDocument();
+    expect(screen.queryByText(/Всего:/)).not.toBeInTheDocument();
+    const table = screen.getByRole('grid', { name: 'Вакансии' });
+    expect(within(table).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
+      'Название', 'Регион', 'Отклики', 'Истекает',
+    ]);
+    const responses = within(table).getByRole('columnheader', { name: 'Отклики' });
+    fireEvent.click(responses);
+    expect(responses).toHaveAttribute('aria-sort', 'ascending');
+    let rows = within(table).getAllByRole('row').slice(1);
+    expect(rows[0]).toHaveTextContent('206');
+    expect(rows[1]).toHaveTextContent('369');
+    fireEvent.click(responses);
+    expect(responses).toHaveAttribute('aria-sort', 'descending');
+    rows = within(table).getAllByRole('row').slice(1);
+    expect(rows[0]).toHaveTextContent('369');
+    expect(rows[1]).toHaveTextContent('206');
+  });
+
   it('закрывает окно по Escape и возвращает фокус к кнопке открытия', async () => {
     mount();
     const openButton = screen.getByRole('button', { name: /добавить вакансию/i });

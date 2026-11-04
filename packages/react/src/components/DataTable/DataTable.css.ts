@@ -350,15 +350,15 @@ export const sortIcon = style({
 });
 
 /**
- * Нейтральный индикатор — двойная стрелка. Виден только под курсором
- * и исчезает совсем, когда колонка отсортирована.
+ * Нейтральный индикатор — двойная стрелка. Видим постоянно и исчезает,
+ * когда колонка отсортирована.
  */
 export const sortIconNeutral = style({
-  opacity: 0,
+  opacity: 0.75,
   transition: `opacity ${vars.duration.fast}`,
 
   selectors: {
-    '[data-allows-sorting][data-hovered] &': { opacity: 0.55 },
+    '[data-allows-sorting][data-hovered] &': { opacity: 1 },
     '[data-sort-direction] &': { display: 'none' },
   },
 
@@ -367,7 +367,7 @@ export const sortIconNeutral = style({
   },
 });
 
-/** Направление сортировки — одиночный шеврон, перевёрнутый при убывании. */
+/** Направление сортировки — стрелка, перевёрнутая при убывании. */
 export const sortIconDir = style({
   display: 'none',
 

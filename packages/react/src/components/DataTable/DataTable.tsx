@@ -35,7 +35,7 @@ import {
 } from 'react-aria-components';
 import clsx from 'clsx';
 import { useMessages } from '@neobook/i18n';
-import { IconChevronRight, IconChevronUp, IconDrag, IconSelector } from '@neobook/icons';
+import { IconArrowUp, IconChevronRight, IconDrag, IconSelector } from '@neobook/icons';
 import { varName } from '../../utils/varName.js';
 import * as css from './DataTable.css.js';
 
@@ -293,7 +293,7 @@ export function DataTableColumn({
             {children}
             <span className={css.sortIcons}>
               <IconSelector className={clsx(css.sortIcon, css.sortIconNeutral)} />
-              <IconChevronUp className={clsx(css.sortIcon, css.sortIconDir)} />
+              <IconArrowUp className={clsx(css.sortIcon, css.sortIconDir)} />
             </span>
           </span>
         ) : (

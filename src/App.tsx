@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, CircleAlert, CirclePlus, List, LoaderCircle, Mic, Plus, Sparkle, Square } from 'lucide-react';
+import { Check, ChevronsUpDown, CircleAlert, CirclePlus, List, LoaderCircle, Mic, Sparkle, Square } from 'lucide-react';
 import { Button } from '@neobook/react/components/Button/Button';
 import { DataTable, DataTableBody, DataTableCell, DataTableColumn, DataTableHeader, DataTableRow } from '@neobook/react/components/DataTable/DataTable';
 import { Modal } from '@neobook/react/components/Modal/Modal';
@@ -50,7 +50,7 @@ export function App() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState('all');
-  const [sort, setSort] = useState<Sort>({ column: 'processed', direction: 'ascending' });
+  const [sort, setSort] = useState<Sort>({ column: 'title', direction: 'ascending' });
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<VacancyDraft>(createEmptyDraft);
   const [sections, setSections] = useState<VacancySections | null>(null);
@@ -139,12 +139,13 @@ export function App() {
         <div className="brand" role="img" aria-label="Искра, Лаборатория ПИИ">
           <span className="brand-mark"><Sparkle aria-hidden="true" size={20} /></span>
           <span className="brand-copy"><strong>Искра</strong><span>Лаборатория ПИИ</span></span>
+          <ChevronsUpDown className="brand-chevron" aria-hidden="true" size={16} />
         </div>
-        <nav aria-label="Основное меню"><div className="nav-current" aria-current="page"><List size={17} aria-hidden="true" />Все вакансии</div></nav>
+        <nav aria-label="Основное меню"><div className="nav-current" aria-current="page"><List size={17} aria-hidden="true" />Вакансии</div></nav>
       </aside>
 
       <main className="content">
-        <div className="page-heading"><h1>Вакансии</h1></div>
+        <div className="page-heading"><h1>Список вакансий</h1></div>
         <div className="table-controls">
           <TextField className="search-field" size="lg" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} />
           <div className="region-wrap">
@@ -154,7 +155,7 @@ export function App() {
               {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
             </Select>
           </div>
-          <Button className="add-button" variant="primary" size="lg" leadingIcon={<Plus size={16} />} onPress={() => {
+          <Button className="add-button" variant="primary" size="lg" leadingIcon={<CirclePlus size={16} aria-hidden="true" />} onPress={() => {
             if (editingId !== null) {
               setEditingId(null);
               setDraft(createEmptyDraft());
@@ -167,31 +168,28 @@ export function App() {
         </div>
         <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
           <DataTableHeader>
-            <DataTableColumn id="title" isRowHeader allowsSorting width="44%" minWidth={280}>Название</DataTableColumn>
-            <DataTableColumn id="region" allowsSorting width="10%">Регион</DataTableColumn>
-            <DataTableColumn id="responses" allowsSorting width="11%">Отклики</DataTableColumn>
-            <DataTableColumn id="processed" allowsSorting width="13%">Обработано</DataTableColumn>
-            <DataTableColumn id="expires" allowsSorting width="22%">Истекает</DataTableColumn>
+            <DataTableColumn id="title" isRowHeader allowsSorting width="51%" minWidth={280}>Название</DataTableColumn>
+            <DataTableColumn id="region" allowsSorting width="11%">Регион</DataTableColumn>
+            <DataTableColumn id="responses" allowsSorting width="13%">Отклики</DataTableColumn>
+            <DataTableColumn id="expires" allowsSorting width="25%">Истекает</DataTableColumn>
           </DataTableHeader>
           <DataTableBody items={filtered} renderEmptyState={() => 'Вакансии не найдены'}>
             {(item) => <DataTableRow id={item.id} {...(savedDrafts[item.id] ? { onAction: () => openSaved(item.id) } : {})}>
               <DataTableCell>{item.title}</DataTableCell>
               <DataTableCell>{item.region || '—'}</DataTableCell>
               <DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell>
-              <DataTableCell>{item.processed === null ? '—' : `${item.processed}%`}</DataTableCell>
               <DataTableCell>{formatDate(item.expires)}</DataTableCell>
             </DataTableRow>}
           </DataTableBody>
         </DataTable>
-        <p className="table-count">Всего: {filtered.length}</p>
       </main>
 
       <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавить вакансию" className="vacancy-modal" footer={
         <div className="modal-actions">
-          {phase !== 'main' && <Button variant="secondary" onPress={moveBack} isDisabled={busy}>Назад</Button>}
+          {phase !== 'main' && <Button variant="secondary" size="lg" onPress={moveBack} isDisabled={busy}>Назад</Button>}
           {phase === 'review'
-            ? <Button variant="primary" onPress={save} isDisabled={!isFilled(draft.title)}>Сохранить</Button>
-            : <Button className="generation-button" variant="primary" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
+            ? <Button variant="primary" size="lg" onPress={save} isDisabled={!isFilled(draft.title)}>Сохранить</Button>
+            : <Button className="generation-button" variant="primary" size="lg" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
                 {generating ? 'Создаём описание' : phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
               </Button>}
         </div>
