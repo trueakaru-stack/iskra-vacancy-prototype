@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { ChevronsUpDown, CirclePlus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronsUpDown, CirclePlus, Trash2 } from 'lucide-react';
 import { Button } from '@neobook/react/components/Button/Button';
 import { DataTable, DataTableBody, DataTableCell, DataTableColumn, DataTableHeader, DataTableRow } from '@neobook/react/components/DataTable/DataTable';
 import { Modal } from '@neobook/react/components/Modal/Modal';
@@ -7,15 +7,16 @@ import { Select, SelectItem } from '@neobook/react/components/Select/Select';
 import { Stepper } from '@neobook/react/components/Stepper/Stepper';
 import { TextField } from '@neobook/react/components/TextField/TextField';
 import { Textarea } from '@neobook/react/components/Textarea/Textarea';
+import { Tooltip } from '@neobook/react/components/Tooltip/Tooltip';
+import { loadVacancies, storeVacancies, type SavedVacancy } from './vacancyStorage';
 import { generateDescription, reviseVacancy, structureAnswer } from './generation';
 import { useSpeech } from './useSpeech';
 import { VoiceAnswer } from './VoiceAnswer';
 import { VacancyFields } from './VacancyFields';
-import { answerProgress, appendTranscript, CONDITION_FIELDS, createEmptyDraft, DEMO_VACANCIES, draftError, filterVacancies, isFilled, MAX_ANSWER_LENGTH, QUESTIONS, toVacancyRow, type Answers, type IntakeStage, type VacancyDraft, type VacancyRevision, type VacancyRow, type VacancySections } from './vacancy';
+import { answerProgress, appendTranscript, createEmptyDraft, DEMO_VACANCIES, draftError, filterVacancies, isFilled, MAX_ANSWER_LENGTH, QUESTIONS, toVacancyRow, type Answers, type IntakeStage, type VacancyDraft, type VacancyRevision, type VacancyRow, type VacancySections } from './vacancy';
 
 type Phase = 'main' | 'conditions' | 'questions' | 'review';
 type Sort = { column: string | number; direction: 'ascending' | 'descending' };
-interface SavedVacancy { draft: VacancyDraft; sections: VacancySections; sectionEdits: Partial<VacancySections> }
 const STAGES = [{ label: 'Основное' }, { label: 'Условия' }, { label: 'Описание' }, { label: 'Проверка' }];
 const PHASES: Phase[] = ['main', 'conditions', 'questions', 'review'];
 const PROMPTS = {
@@ -60,8 +61,19 @@ function Details({ draft, includeTitle = true }: { draft: VacancyDraft; includeT
 }
 
 export function App() {
-  const [vacancies, setVacancies] = useState<VacancyRow[]>([...DEMO_VACANCIES]);
-  const [savedDrafts, setSavedDrafts] = useState<Record<string, SavedVacancy>>({});
+  const [initial] = useState(() => {
+    try { return { ...loadVacancies(), error: '' }; }
+    catch { return { vacancies: [...DEMO_VACANCIES], savedDrafts: {} as Record<string, SavedVacancy>, error: 'Не удалось прочитать сохранённые вакансии в этом браузере.' }; }
+  });
+  const [vacancies, setVacancies] = useState<VacancyRow[]>(initial.vacancies);
+  const [savedDrafts, setSavedDrafts] = useState<Record<string, SavedVacancy>>(initial.savedDrafts);
+  const [storageError, setStorageError] = useState(initial.error);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  useEffect(() => {
+    if (initial.error) return;
+    try { storeVacancies({ vacancies, savedDrafts }); setStorageError(''); }
+    catch { setStorageError('Не удалось сохранить вакансии в этом браузере. Не закрывайте страницу.'); }
+  }, [vacancies, savedDrafts, initial.error]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState('all');
@@ -126,7 +138,8 @@ export function App() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Не удалось подготовить описание.'); }
     finally { setOperation(null); }
   };
-  const canVisitStep = (index: number) => index === 0 || (isFilled(intake.main) && (index !== 3 || QUESTIONS.every(({ id }) => isFilled(draft.answers[id]) && draft.answers[id].length <= MAX_ANSWER_LENGTH)));
+  const hasIntake = (stage: IntakeStage) => isFilled(intake[stage]) && intake[stage].length <= MAX_ANSWER_LENGTH;
+  const canVisitStep = (index: number) => index === 0 || (hasIntake('main') && (index < 2 || hasIntake('conditions')) && (index !== 3 || QUESTIONS.every(({ id }) => isFilled(draft.answers[id]) && draft.answers[id].length <= MAX_ANSWER_LENGTH)));
   const navigateStep = async (index: number) => {
     if (busy || !canVisitStep(index) || index === PHASES.indexOf(phase)) return;
     speech.reset(); setError('');
@@ -136,10 +149,7 @@ export function App() {
       for (const stage of (index > 1 ? ['main', 'conditions'] : ['main']) as IntakeStage[]) {
         if (parsedIntake[stage] === intake[stage]) continue;
         setOperation(stage);
-        const empty = createEmptyDraft();
-        const fields = stage === 'conditions' && !isFilled(intake.conditions)
-          ? Object.fromEntries(CONDITION_FIELDS.map((key) => [key, empty[key]]))
-          : await structureAnswer(stage, intake[stage]);
+        const fields = await structureAnswer(stage, intake[stage]);
         next = { ...next, ...fields };
         const invalid = draftError(next);
         if (invalid) { setPhase(stage); throw new Error(invalid); }
@@ -156,14 +166,11 @@ export function App() {
     if (currentAnswer.length > MAX_ANSWER_LENGTH) return;
     if (phase === 'main' || phase === 'conditions') {
       const stage: IntakeStage = phase;
-      if (stage === 'main' && !isFilled(intake.main)) return;
+      if (!hasIntake(stage)) return;
       if (parsedIntake[stage] === intake[stage]) { setPhase(stage === 'main' ? 'conditions' : 'questions'); return; }
       setOperation(stage);
       try {
-        const empty = createEmptyDraft();
-        const fields = stage === 'conditions' && !isFilled(intake.conditions)
-          ? Object.fromEntries(CONDITION_FIELDS.map((key) => [key, empty[key]]))
-          : await structureAnswer(stage, intake[stage]);
+        const fields = await structureAnswer(stage, intake[stage]);
         const next = { ...draft, ...fields };
         const invalid = draftError(next);
         if (invalid) throw new Error(invalid);
@@ -178,14 +185,19 @@ export function App() {
     await showReview(draft, true);
   };
   const save = () => {
-    if (!sections || draftError(draft)) return;
-    const id = 'draft-' + Date.now();
+    if (!sections || draftError(draft) || !hasIntake('main') || !hasIntake('conditions')) return;
+    const id = 'draft-' + crypto.randomUUID();
     setSavedDrafts((current) => ({ ...current, [id]: { draft, sections, sectionEdits } }));
     setVacancies((current) => [toVacancyRow(draft, id), ...current]);
-    setSelectedId(id); setEditing(false); setRevision(null); setEditText('');
+    setSelectedId(null); setHighlightedId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
     setDraft(createEmptyDraft()); setSections(null); setGeneratedInput(null); setSectionEdits({});
     setIntake({ main: '', conditions: '' }); setParsedIntake({ main: null, conditions: null });
     setPhase('main'); setQuestion(0); setOpen(false);
+  };
+  const deleteVacancy = (id: string) => {
+    setVacancies((current) => current.filter((row) => row.id !== id));
+    setSavedDrafts((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)));
+    if (highlightedId === id) setHighlightedId(null);
   };
   const saveChanges = (updated: SavedVacancy) => {
     if (!selectedId || draftError(updated.draft)) return;
@@ -222,6 +234,7 @@ export function App() {
       </nav>
     </aside>
     <main className="content">
+      {storageError && <p className="generation-error" role="alert">{storageError}</p>}
       {selectedRow ? <>
         <div className="page-heading detail-heading"><h1>{visibleDraft.title}</h1><Button variant="secondary" size="lg" onPress={leaveDetails} isDisabled={busy}>К вакансиям</Button></div>
         <article className="vacancy-detail" aria-label="Описание вакансии">
@@ -269,10 +282,12 @@ export function App() {
             <DataTableColumn id="title" isRowHeader allowsSorting width="51%" minWidth={280}>Название</DataTableColumn>
             <DataTableColumn id="region" allowsSorting width="11%">Регион</DataTableColumn>
             <DataTableColumn id="responses" allowsSorting width="13%">Отклики</DataTableColumn>
-            <DataTableColumn id="expires" allowsSorting width="25%">Истекает</DataTableColumn>
+            <DataTableColumn id="expires" allowsSorting width="20%">Истекает</DataTableColumn>
+            <DataTableColumn id="actions" width="5%" minWidth={56}><span className="visually-hidden">Действия</span></DataTableColumn>
           </DataTableHeader>
-          <DataTableBody items={filtered} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => <DataTableRow id={item.id} onAction={() => { setSelectedId(item.id); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); }}>
+          <DataTableBody items={filtered} dependencies={[highlightedId]} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => <DataTableRow id={item.id} className={highlightedId === item.id ? 'new-vacancy' : undefined} onAnimationEnd={(event) => { if (event.target === event.currentTarget) setHighlightedId(null); }} onAction={() => { setSelectedId(item.id); setHighlightedId(null); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); }}>
             <DataTableCell>{item.title}</DataTableCell><DataTableCell>{item.region.join(', ') || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
+            <DataTableCell className="vacancy-actions"><Tooltip content="Удалить" placement="top"><Button variant="ghost" size="md" isIconOnly aria-label={'Удалить вакансию «' + item.title + '»'} onPress={() => deleteVacancy(item.id)}><Trash2 size={16} aria-hidden="true" /></Button></Tooltip></DataTableCell>
           </DataTableRow>}</DataTableBody>
         </DataTable>
       </>}
@@ -280,7 +295,7 @@ export function App() {
     </main>
     <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавление вакансии" className="vacancy-modal" overlayClassName="vacancy-modal-overlay" footer={<div className="modal-actions">
       {phase !== 'main' && <Button variant="secondary" size="lg" onPress={moveBack} isDisabled={busy}>Назад</Button>}
-      {phase === 'review' ? <Button variant="primary" size="lg" onPress={save} isDisabled={!!draftError(draft)}>Сохранить</Button> : <Button className="generation-button" variant="primary" size="lg" aria-label={operation ? operationLabel : undefined} onPress={() => void moveForward()} isPending={operation !== null} isDisabled={speech.busy || currentAnswer.length > MAX_ANSWER_LENGTH || ((phase === 'main' || phase === 'questions') && !isFilled(currentAnswer))}>{phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}</Button>}
+      {phase === 'review' ? <Button variant="primary" size="lg" onPress={save} isDisabled={!!draftError(draft)}>Сохранить</Button> : <Button className="generation-button" variant="primary" size="lg" aria-label={operation ? operationLabel : undefined} onPress={() => void moveForward()} isPending={operation !== null} isDisabled={speech.busy || currentAnswer.length > MAX_ANSWER_LENGTH || !isFilled(currentAnswer)}>{phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}</Button>}
     </div>}>
       <div className="sticky-steps"><Stepper className="vacancy-steps" role="group" aria-label="Этапы создания вакансии" steps={STAGES.map((step, index) => ({ ...step, state: index === PHASES.indexOf(phase) ? 'current' : index < PHASES.indexOf(phase) ? 'complete' : canVisitStep(index) ? 'available' : 'upcoming' }))} current={PHASES.indexOf(phase)} onStepPress={busy ? undefined : (index) => void navigateStep(index)} /></div>
       {operation && <span className="visually-hidden" role="status">{operationLabel}</span>}

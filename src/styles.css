@@ -156,3 +156,12 @@ button:disabled { cursor: not-allowed; }
 .description-sections { display: grid; gap: 32px; }
 .description-sections p { margin: 0; white-space: pre-wrap; font-size: 16px; line-height: 1.6; }
 .empty-description { color: var(--nb-fg-secondary); }
+
+.vacancy-table .vacancy-actions { text-align: center; }
+.vacancy-table .new-vacancy { animation: vacancy-added 650ms ease-in-out 5; }
+@keyframes vacancy-added { 0%, 100% { background-color: transparent; } 50% { background-color: var(--nb-bg-hover); } }
+@supports selector(::-webkit-scrollbar) {
+  textarea::-webkit-scrollbar { width: calc(var(--nb-space-4) + var(--nb-space-2)); }
+  textarea::-webkit-scrollbar-track { margin-block: var(--nb-space-2); }
+  textarea::-webkit-scrollbar-thumb { border-right: var(--nb-space-2) solid transparent; background-clip: padding-box; }
+}

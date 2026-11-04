@@ -17,10 +17,17 @@ const main = { title: 'Дизайнер', region: ['Москва'], experience: 
 const conditions = { salaryFrom: '120000', salaryTo: '180000', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор (ТК РФ)'] };
 
 beforeAll(() => {
+  const entries = new Map<string, string>();
+  Object.defineProperty(window, 'localStorage', { configurable: true, value: {
+    get length() { return entries.size; }, key: (index: number) => [...entries.keys()][index] ?? null,
+    getItem: (key: string) => entries.get(key) ?? null, setItem: (key: string, value: string) => entries.set(key, value),
+    removeItem: (key: string) => entries.delete(key), clear: () => entries.clear(),
+  } });
   window.matchMedia = vi.fn().mockImplementation(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
   Element.prototype.scrollIntoView = vi.fn();
 });
 beforeEach(() => {
+  window.localStorage.clear();
   vi.mocked(generateDescription).mockReset().mockResolvedValue(generated);
   vi.mocked(structureAnswer).mockReset().mockImplementation(async (stage) => stage === 'main' ? main : conditions);
   vi.mocked(reviseVacancy).mockReset().mockResolvedValue({ fields: { salaryFrom: '150000' }, sections: { skills: 'Figma и HTML' } });
@@ -31,12 +38,12 @@ async function openCreation() {
   fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
   return screen.findByRole('dialog');
 }
-async function goToQuestions(withConditions = false) {
+async function goToQuestions() {
   const modal = await openCreation();
   fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Дизайнер, Москва, опыт от трёх лет' } });
   fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
   await within(modal).findByRole('heading', { name: 'Условия' });
-  if (withConditions) fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'От 120 до 180 тысяч, полная занятость, удалённо, 5/2, трудовой договор' } });
+  fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'От 120 до 180 тысяч, полная занятость, удалённо, 5/2, трудовой договор' } });
   fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
   await within(modal).findByText('Вопрос 1 из 4');
   return modal;
@@ -48,15 +55,54 @@ async function fillQuestions(modal: HTMLElement) {
   }
 }
 async function createSaved() {
-  const modal = await goToQuestions(true);
+  const modal = await goToQuestions();
   await fillQuestions(modal);
   await within(modal).findByLabelText('Основные обязанности');
   fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
   return screen.getByRole('article', { name: 'Описание вакансии' });
 }
 
 describe('создание вакансии голосом', () => {
+  it('не позволяет пропустить условия кнопкой или степпером', async () => {
+    mount();
+    const modal = await openCreation();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Дизайнер в Москве' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    await within(modal).findByRole('heading', { name: 'Условия' });
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+    const steps = within(modal).getByRole('group', { name: 'Этапы создания вакансии' });
+    expect(within(steps).queryByRole('button', { name: /Описание/ })).not.toBeInTheDocument();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: '   ' } });
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Удалённо, полный день' } });
+    fireEvent.click(within(steps).getByRole('button', { name: /Описание/ }));
+    expect(await within(modal).findByText('Вопрос 1 из 4')).toBeInTheDocument();
+  });
+
+  it('возвращает к таблице, сохраняет вакансию после перезагрузки и сохраняет удаление', async () => {
+    const first = mount();
+    const modal = await goToQuestions();
+    await fillQuestions(modal);
+    fireEvent.change(await within(modal).findByLabelText('Основные обязанности'), { target: { value: 'Моя сохранённая редакция' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.getByRole('heading', { name: 'Вакансии' })).toBeInTheDocument();
+    expect(screen.getByRole('row', { name: /Дизайнер/ })).toHaveClass('new-vacancy');
+    first.unmount();
+    const second = mount();
+    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
+    expect(screen.getByRole('article')).toHaveTextContent('Моя сохранённая редакция');
+    fireEvent.click(screen.getByRole('button', { name: 'К вакансиям' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить вакансию «Дизайнер»' }));
+    expect(screen.queryByRole('row', { name: /Дизайнер/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('article')).not.toBeInTheDocument();
+    second.unmount();
+    mount();
+    expect(screen.queryByRole('row', { name: /Дизайнер/ })).not.toBeInTheDocument();
+  });
+
   it('показывает текущий раздел и не открывает анализ', () => {
     mount();
     expect(screen.getByRole('heading', { name: 'Вакансии' })).toBeInTheDocument();
@@ -72,7 +118,7 @@ describe('создание вакансии голосом', () => {
   it('сохраняет колонки и сортирует отклики', () => {
     mount();
     const table = screen.getByRole('grid', { name: 'Вакансии' });
-    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Название', 'Регион', 'Отклики', 'Истекает']);
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Название', 'Регион', 'Отклики', 'Истекает', 'Действия']);
     const header = within(table).getByRole('columnheader', { name: 'Отклики' });
     fireEvent.click(header); fireEvent.click(header);
     expect(header).toHaveAttribute('aria-sort', 'descending');
@@ -99,7 +145,7 @@ describe('создание вакансии голосом', () => {
 
   it('собирает сведения и условия голосовыми ответами, сохраняет их и не повторяет неизменённый запрос', async () => {
     mount();
-    const modal = await goToQuestions(true);
+    const modal = await goToQuestions();
     expect(structureAnswer).toHaveBeenCalledTimes(2);
     fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
     expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('От 120 до 180 тысяч, полная занятость, удалённо, 5/2, трудовой договор');
@@ -153,7 +199,7 @@ describe('создание вакансии голосом', () => {
     expect(within(modal).getByRole('heading', { name: 'Основное' })).toBeInTheDocument();
     fireEvent.click(within(steps).getByRole('button', { name: /Описание/ }));
     expect(await within(modal).findByLabelText('Ваш ответ')).toHaveValue('Мой ответ');
-    expect(structureAnswer).toHaveBeenCalledOnce();
+    expect(structureAnswer).toHaveBeenCalledTimes(2);
     fireEvent.click(within(steps).getByRole('button', { name: /Основное/ }));
     vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: ['Москва'], experience: '' });
     fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Только Москва' } });
@@ -220,7 +266,7 @@ describe('создание вакансии голосом', () => {
 
   it('позволяет исправить реквизиты на проверке и сохраняет их после возврата к вопросам', async () => {
     mount();
-    const modal = await goToQuestions(true);
+    const modal = await goToQuestions();
     await fillQuestions(modal);
     const title = await within(modal).findByLabelText(/Название вакансии/);
     fireEvent.change(title, { target: { value: 'Аналитик' } });
@@ -231,6 +277,7 @@ describe('создание вакансии голосом', () => {
     expect(await within(modal).findByLabelText(/Название вакансии/)).toHaveValue('Аналитик');
     expect(within(modal).getByRole('button', { name: /Опыт работы/ })).toHaveTextContent('От 6 лет');
     fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Аналитик/ })); });
     expect(await screen.findByRole('heading', { name: 'Аналитик' })).toBeInTheDocument();
     expect(screen.getByRole('article')).toHaveTextContent('Москва');
   });
