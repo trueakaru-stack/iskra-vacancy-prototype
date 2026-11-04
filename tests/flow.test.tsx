@@ -87,15 +87,75 @@ describe('создание вакансии', () => {
     vi.mocked(generateDescription).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
     mount();
     const modal = await goToQuestions();
+    let createButton: HTMLElement | null = null;
+    for (let index = 0; index < 4; index++) {
+      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
+      const button = within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' });
+      if (index === 3) createButton = button;
+      fireEvent.click(button);
+    }
+    if (!createButton) throw new Error('Кнопка создания описания не найдена');
+    expect(createButton).toHaveAttribute('data-pending');
+    expect(createButton).toHaveTextContent('Создать описание');
+    expect(within(createButton).getByRole('progressbar', { name: 'Загрузка' })).toBeInTheDocument();
+    expect(within(modal).getByRole('status')).toHaveTextContent('Создаём описание');
+    await act(async () => { finish({ tasks: 'Задачи', project: 'Проект', plans: 'Планы', skills: 'Навыки' }); });
+    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Задачи');
+  });
+
+  it('принимает одну границу зарплаты и блокирует обратный диапазон', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
+    const modal = await screen.findByRole('dialog');
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    const from = within(modal).getByRole('textbox', { name: 'Зарплата от' });
+    const to = within(modal).getByRole('textbox', { name: 'Зарплата до' });
+    fireEvent.change(from, { target: { value: '120000' } });
+    fireEvent.blur(from);
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeEnabled();
+    fireEvent.change(to, { target: { value: '80000' } });
+    fireEvent.blur(to);
+    expect(within(modal).getByRole('alert')).toHaveTextContent('Сумма «от» не может быть больше суммы «до».');
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+    fireEvent.change(to, { target: { value: '150000' } });
+    fireEvent.blur(to);
+    expect(within(modal).queryByRole('alert')).not.toBeInTheDocument();
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeEnabled();
+  });
+
+  it('сохраняет выбранный опыт и несколько форматов работы при возврате и повторном открытии', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
+    const modal = await screen.findByRole('dialog');
+    fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: 'Дизайнер' } });
+    fireEvent.click(within(modal).getByRole('button', { name: /опыт работы/i }));
+    fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'От 3 до 6 лет' }));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    fireEvent.click(within(modal).getByRole('button', { name: /формат работы/i }));
+    const list = await screen.findByRole('listbox');
+    fireEvent.click(within(list).getByRole('option', { name: 'Удалённо' }));
+    fireEvent.click(within(list).getByRole('option', { name: 'Гибрид' }));
+    expect(within(list).getByRole('option', { name: 'Удалённо' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(list).getByRole('option', { name: 'Гибрид' })).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Применить' }));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    expect(within(modal).getByRole('gridcell', { name: /Удалённо/ })).toBeInTheDocument();
+    expect(within(modal).getByRole('gridcell', { name: /Гибрид/ })).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
     for (let index = 0; index < 4; index++) {
       fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
       fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
     }
-    const pendingText = within(modal).getByText('Создаём описание');
-    expect(pendingText.closest('button')).toHaveAttribute('data-pending');
-    expect(within(modal).getByRole('progressbar', { name: 'Загрузка' })).toBeInTheDocument();
-    await act(async () => { finish({ tasks: 'Задачи', project: 'Проект', plans: 'Планы', skills: 'Навыки' }); });
-    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Задачи');
+    await within(modal).findByLabelText('Основные обязанности');
+    expect(within(modal).getByText('От 3 до 6 лет')).toBeInTheDocument();
+    expect(within(modal).getByText('Удалённо, Гибрид')).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
+    const reopened = await screen.findByRole('dialog');
+    expect(within(reopened).getByText('От 3 до 6 лет')).toBeInTheDocument();
+    expect(within(reopened).getByText('Удалённо, Гибрид')).toBeInTheDocument();
   });
 
   it('сохраняет сформированный черновик и открывает его повторно', async () => {
@@ -123,6 +183,45 @@ describe('создание вакансии', () => {
     expect(await within(modal).findByText(/не поддерживается/i)).toBeInTheDocument();
     expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Текст сохранён');
     expect(within(modal).getByRole('button', { name: 'Повторить запись' })).toBeInTheDocument();
+  });
+
+  it('показывает обработку записи и вставляет текст после ответа сервиса', async () => {
+    class Recorder {
+      state = 'inactive';
+      mimeType = 'audio/webm';
+      ondataavailable: ((event: { data: Blob }) => void) | null = null;
+      onstop: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      start() { this.state = 'recording'; }
+      stop() {
+        this.state = 'inactive';
+        this.ondataavailable?.({ data: new Blob(['test'], { type: 'audio/webm' }) });
+        this.onstop?.();
+      }
+    }
+    let respond: (response: Response) => void = () => undefined;
+    const mediaDescriptor = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
+    vi.stubEnv('VITE_GENERATION_URL', 'https://worker.example/generate');
+    vi.stubGlobal('MediaRecorder', Recorder);
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => { respond = resolve; })));
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn(async () => ({ getTracks: () => [{ stop: vi.fn() }] })) } });
+    try {
+      mount();
+      const modal = await goToQuestions();
+      await act(async () => { fireEvent.click(within(modal).getByRole('button', { name: 'Начать запись' })); });
+      fireEvent.click(within(modal).getByRole('button', { name: 'Остановить запись' }));
+      const processing = within(modal).getByRole('button', { name: 'Распознаём речь' });
+      expect(processing).toBeDisabled();
+      expect(processing.querySelector('.spinner svg')).toBeInTheDocument();
+      expect(within(modal).getByRole('status')).toHaveTextContent('Распознаём речь');
+      await act(async () => { respond(new Response(JSON.stringify({ text: 'Голосовой ответ' }), { status: 200 })); });
+      expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Голосовой ответ');
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+      if (mediaDescriptor) Object.defineProperty(navigator, 'mediaDevices', mediaDescriptor);
+      else Reflect.deleteProperty(navigator, 'mediaDevices');
+    }
   });
 
   it('объясняет превышение длины и не теряет введённый текст', async () => {

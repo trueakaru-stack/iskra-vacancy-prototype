@@ -3,6 +3,7 @@ import { Check, ChevronsUpDown, CircleAlert, CirclePlus, List, LoaderCircle, Mic
 import { Button } from '@neobook/react/components/Button/Button';
 import { DataTable, DataTableBody, DataTableCell, DataTableColumn, DataTableHeader, DataTableRow } from '@neobook/react/components/DataTable/DataTable';
 import { Modal } from '@neobook/react/components/Modal/Modal';
+import { NumberInput } from '@neobook/react/components/NumberInput/NumberInput';
 import { ProgressRing } from '@neobook/react/components/ProgressRing/ProgressRing';
 import { Select, SelectItem } from '@neobook/react/components/Select/Select';
 import { Stepper } from '@neobook/react/components/Stepper/Stepper';
@@ -14,6 +15,14 @@ import { answerProgress, appendTranscript, createEmptyDraft, DEMO_VACANCIES, fil
 
 type Phase = 'main' | 'conditions' | 'questions' | 'review';
 type Sort = { column: string | number; direction: 'ascending' | 'descending' };
+type MultiField = 'employment' | 'workFormat' | 'schedule' | 'contract';
+type TextFieldName = Exclude<keyof VacancyDraft, MultiField | 'answers'>;
+
+const EXPERIENCE = ['Нет опыта', 'От 1 года до 3 лет', 'От 3 до 6 лет', 'Более 6 лет'];
+const EMPLOYMENT = ['Полная занятость', 'Частичная занятость', 'Проектная работа', 'Подработка', 'Вахта'];
+const WORK_FORMATS = ['На месте работодателя', 'Удалённо', 'Гибрид', 'Разъездной'];
+const SCHEDULES = ['5/2', '6/1', '4/4', '4/3', '4/2', '3/3', '3/2', '2/2', '2/1', '1/3', '1/2', 'По выходным', 'Свободный', 'Другое'];
+const CONTRACTS = ['Трудовой договор', 'ГПХ с физлицом', 'ГПХ с самозанятым', 'ГПХ с ИП'];
 
 const STAGES: Array<{ label: string }> = [
   { label: 'Основное' },
@@ -22,6 +31,12 @@ const STAGES: Array<{ label: string }> = [
   { label: 'Проверка' },
 ];
 const PHASES: Phase[] = ['main', 'conditions', 'questions', 'review'];
+
+function MultiChoice({ label, options, value, onChange }: { label: string; options: string[]; value: string[]; onChange: (value: string[]) => void }) {
+  return <Select<{ id: string }, 'multiple'> className="choice-field" label={label} placeholder="Выберите варианты" selectionMode="multiple" value={value} onChange={(next) => onChange(next.map(String))}>
+    {options.map((option) => <SelectItem id={option} key={option}>{option}</SelectItem>)}
+  </Select>;
+}
 
 function formatDate(date: string | null): string {
   if (!date) return '—';
@@ -61,7 +76,8 @@ export function App() {
   const regions = useMemo(() => [...new Set(vacancies.map((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru')), [vacancies]);
   const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort), [vacancies, query, region, sort]);
 
-  const setField = (name: keyof Omit<VacancyDraft, 'answers'>, value: string) => setDraft((current) => ({ ...current, [name]: value }));
+  const setField = (name: TextFieldName, value: string) => setDraft((current) => ({ ...current, [name]: value }));
+  const setChoices = (name: MultiField, value: string[]) => setDraft((current) => ({ ...current, [name]: value }));
   const setAnswer = (id: keyof Answers, value: string) => setDraft((current) => ({ ...current, answers: { ...current.answers, [id]: value } }));
   const addTranscript = (text: string) => setDraft((current) => ({
     ...current,
@@ -125,11 +141,12 @@ export function App() {
 
   const title = phase === 'main' ? 'Основное' : phase === 'conditions' ? 'Условия' : phase === 'questions' ? 'Описание вакансии' : 'Проверка описания';
   const busy = speech.busy || generating;
+  const salaryInvalid = draft.salaryFrom !== '' && draft.salaryTo !== '' && Number(draft.salaryFrom) > Number(draft.salaryTo);
   const salary = [draft.salaryFrom && `от ${draft.salaryFrom}`, draft.salaryTo && `до ${draft.salaryTo}`].filter(Boolean).join(' ');
   const detailCandidates: Array<[string, string]> = [
     ['Название', draft.title], ['Регион', draft.region], ['Опыт работы', draft.experience],
-    ['Зарплата', salary], ['Занятость', draft.employment], ['Формат работы', draft.workFormat],
-    ['График', draft.schedule], ['Оформление', draft.contract],
+    ['Зарплата', salary], ['Занятость', draft.employment.join(', ')], ['Формат работы', draft.workFormat.join(', ')],
+    ['График', draft.schedule.join(', ')], ['Оформление', draft.contract.join(', ')],
   ];
   const details = detailCandidates.filter(([, value]) => isFilled(value));
 
@@ -184,14 +201,17 @@ export function App() {
         </DataTable>
       </main>
 
-      <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавить вакансию" className="vacancy-modal" footer={
+      <Modal isOpen={open} onOpenChange={(next) => { if (!busy) { if (!next) speech.reset(); setOpen(next); } }} isDismissable={!busy} backdrop="blur" size="lg" radius="2xl" title="Добавить вакансию" className="vacancy-modal" overlayClassName="vacancy-modal-overlay" footer={
         <div className="modal-actions">
           {phase !== 'main' && <Button variant="secondary" size="lg" onPress={moveBack} isDisabled={busy}>Назад</Button>}
           {phase === 'review'
             ? <Button variant="primary" size="lg" onPress={save} isDisabled={!isFilled(draft.title)}>Сохранить</Button>
-            : <Button className="generation-button" variant="primary" size="lg" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
-                {generating ? 'Создаём описание' : phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
-              </Button>}
+            : <>
+              {generating && <span className="reduced-motion-status" role="status">Создаём описание…</span>}
+              <Button className="generation-button" variant="primary" size="lg" aria-label={generating ? 'Создаём описание' : undefined} onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'conditions' && salaryInvalid) || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
+                {phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
+              </Button>
+              </>}
         </div>
       }>
         <Stepper className="vacancy-steps" role="group" aria-label="Этапы создания вакансии" steps={STAGES} current={PHASES.indexOf(phase)} />
@@ -200,17 +220,24 @@ export function App() {
           {phase === 'main' && <div className="fields">
             <TextField size="lg" label="Название вакансии" isRequired maxLength={200} placeholder="Например, руководитель отдела маркетинга" value={draft.title} onChange={(value) => setField('title', value)} />
             <TextField size="lg" label="Регион" placeholder="Например, Москва" value={draft.region} onChange={(value) => setField('region', value)} />
-            <TextField size="lg" label="Опыт работы" placeholder="Например, от 3 лет" value={draft.experience} onChange={(value) => setField('experience', value)} />
+            <Select className="choice-field" size="lg" label="Опыт работы" placeholder="Выберите опыт" selectedKey={draft.experience || null} onSelectionChange={(key) => setField('experience', String(key ?? ''))}>
+              {EXPERIENCE.map((option) => <SelectItem id={option} key={option}>{option}</SelectItem>)}
+            </Select>
           </div>}
           {phase === 'conditions' && <div className="fields">
-            <div className="field-pair">
-              <TextField size="lg" label="Зарплата от" placeholder="Сумма" value={draft.salaryFrom} onChange={(value) => setField('salaryFrom', value)} inputMode="numeric" />
-              <TextField size="lg" label="Зарплата до" placeholder="Сумма" value={draft.salaryTo} onChange={(value) => setField('salaryTo', value)} inputMode="numeric" />
+            <div className="salary-field" role="group" aria-labelledby="salary-label" aria-describedby={salaryInvalid ? 'salary-error' : undefined}>
+              <span id="salary-label" className="salary-label">Зарплата</span>
+              <div className="salary-range">
+                <NumberInput className="salary-number" aria-label="Зарплата от" size="lg" prefix="от" width="100%" showSteppers={false} textAlign="start" minValue={0} formatOptions={{ maximumFractionDigits: 2 }} isInvalid={salaryInvalid} value={draft.salaryFrom === '' ? NaN : Number(draft.salaryFrom)} onChange={(value) => setField('salaryFrom', Number.isFinite(value) ? String(value) : '')} />
+                <span aria-hidden="true">—</span>
+                <NumberInput className="salary-number" aria-label="Зарплата до" size="lg" prefix="до" width="100%" showSteppers={false} textAlign="start" minValue={0} formatOptions={{ maximumFractionDigits: 2 }} isInvalid={salaryInvalid} value={draft.salaryTo === '' ? NaN : Number(draft.salaryTo)} onChange={(value) => setField('salaryTo', Number.isFinite(value) ? String(value) : '')} />
+              </div>
+              {salaryInvalid && <span id="salary-error" className="salary-error" role="alert">Сумма «от» не может быть больше суммы «до».</span>}
             </div>
-            <TextField size="lg" label="Занятость" placeholder="Например, полная" value={draft.employment} onChange={(value) => setField('employment', value)} />
-            <TextField size="lg" label="Формат работы" placeholder="Например, удалённо" value={draft.workFormat} onChange={(value) => setField('workFormat', value)} />
-            <TextField size="lg" label="График" placeholder="Например, 5/2" value={draft.schedule} onChange={(value) => setField('schedule', value)} />
-            <TextField size="lg" label="Оформление" placeholder="Например, трудовой договор" value={draft.contract} onChange={(value) => setField('contract', value)} />
+            <MultiChoice label="Занятость" options={EMPLOYMENT} value={draft.employment} onChange={(value) => setChoices('employment', value)} />
+            <MultiChoice label="Формат работы" options={WORK_FORMATS} value={draft.workFormat} onChange={(value) => setChoices('workFormat', value)} />
+            <MultiChoice label="График" options={SCHEDULES} value={draft.schedule} onChange={(value) => setChoices('schedule', value)} />
+            <MultiChoice label="Оформление" options={CONTRACTS} value={draft.contract} onChange={(value) => setChoices('contract', value)} />
             <Textarea size="lg" label="Что предлагаем" rows={3} value={draft.benefits} onChange={(value) => setField('benefits', value)} />
             <Textarea size="lg" label="Будет преимуществом" rows={3} value={draft.advantages} onChange={(value) => setField('advantages', value)} />
           </div>}
@@ -222,8 +249,8 @@ export function App() {
               <div className="voice-control">
                 {speech.state === 'listening' && <span className="voice-level" aria-hidden="true">{[0.45, 0.8, 1, 0.65, 0.35].map((weight, index) => <span key={index} style={{ transform: `scaleY(${Math.max(0.18, speech.level * weight)})` }} />)}</span>}
                 <div className="voice-ring"><ProgressRing size="sm" value={answerProgress(draft.answers)} aria-label="Заполненность ответов" valueLabel={<span aria-hidden="true" />} />
-                  <Button variant="ghost" size="sm" isIconOnly className="voice-button" aria-label={speech.state === 'listening' ? 'Остановить запись' : speech.canRetry ? 'Повторить распознавание' : speech.state === 'error' ? 'Повторить запись' : 'Начать запись'} isDisabled={speech.state === 'starting' || speech.state === 'processing'} onPress={() => speech.state === 'listening' ? speech.stop() : speech.canRetry ? speech.retry() : void speech.start()}>
-                    {speech.state === 'listening' ? <Square size={14} fill="currentColor" /> : speech.state === 'processing' || speech.state === 'starting' ? <LoaderCircle size={17} className="spinner" /> : speech.state === 'success' ? <Check size={18} /> : speech.state === 'error' ? <CircleAlert size={18} /> : <Mic size={18} />}
+                  <Button variant="ghost" size="sm" isIconOnly className="voice-button" aria-label={speech.state === 'listening' ? 'Остановить запись' : speech.state === 'processing' ? 'Распознаём речь' : speech.state === 'starting' ? 'Подключаем микрофон' : speech.canRetry ? 'Повторить распознавание' : speech.state === 'error' ? 'Повторить запись' : 'Начать запись'} isDisabled={speech.state === 'starting' || speech.state === 'processing'} onPress={() => speech.state === 'listening' ? speech.stop() : speech.canRetry ? speech.retry() : void speech.start()}>
+                    {speech.state === 'listening' ? <Square size={14} fill="currentColor" /> : speech.state === 'processing' || speech.state === 'starting' ? <span className="spinner" aria-hidden="true"><LoaderCircle size={17} /></span> : speech.state === 'success' ? <Check size={18} /> : speech.state === 'error' ? <CircleAlert size={18} /> : <Mic size={18} />}
                   </Button>
                 </div>
               </div>

@@ -53,6 +53,9 @@ importers:
 
   .:
     dependencies:
+      '@fontsource/manrope':
+        specifier: 5.3.0
+        version: 5.3.0
       '@neobook/i18n':
         specifier: workspace:*
         version: link:packages/i18n
@@ -511,6 +514,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource/manrope@5.3.0':
+    resolution: {integrity: sha512-obJ1Dv3+uCA6HlHgW8u4BGYxJR9In2HW7gjJhlflEvkrj1X1iSEwu0fToL+JYGC/FEKFfIz1sBuPduvcL2gIAA==}
 
   '@internationalized/date@3.12.3':
     resolution: {integrity: sha512-fuLX+3ZKLsxI73y8b01EG/WjHb6gE6weCqlfawPO27kBWGMh9G1yH6Csv1uU7/cac9H2GHmOMt6CjmuQ1aia4Q==}
@@ -1811,6 +1817,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@fontsource/manrope@5.3.0': {}
 
   '@internationalized/date@3.12.3':
     dependencies:

@@ -32,10 +32,10 @@ export interface VacancyDraft {
   experience: string;
   salaryFrom: string;
   salaryTo: string;
-  employment: string;
-  workFormat: string;
-  schedule: string;
-  contract: string;
+  employment: string[];
+  workFormat: string[];
+  schedule: string[];
+  contract: string[];
   benefits: string;
   advantages: string;
   answers: Answers;
@@ -83,10 +83,10 @@ export function createEmptyDraft(): VacancyDraft {
     experience: '',
     salaryFrom: '',
     salaryTo: '',
-    employment: '',
-    workFormat: '',
-    schedule: '',
-    contract: '',
+    employment: [],
+    workFormat: [],
+    schedule: [],
+    contract: [],
     benefits: '',
     advantages: '',
     answers: { tasks: '', project: '', plans: '', skills: '' },

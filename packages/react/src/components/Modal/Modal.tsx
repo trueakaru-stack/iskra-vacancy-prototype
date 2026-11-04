@@ -76,6 +76,8 @@ export interface ModalProps {
   closeIcon?: ReactNode;
   /** Класс поверхности окна. */
   className?: string;
+  /** Класс подложки для расположения окна в конкретном сценарии. */
+  overlayClassName?: string;
 }
 
 /**
@@ -103,6 +105,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(function Modal(
     footer,
     closeIcon,
     className,
+    overlayClassName,
   },
   ref,
 ) {
@@ -116,7 +119,7 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(function Modal(
 
   return (
     <RACModalOverlay
-      className={clsx(css.backdrop, backdrop !== 'default' && css.backdropVariant[backdrop])}
+      className={clsx(css.backdrop, backdrop !== 'default' && css.backdropVariant[backdrop], overlayClassName)}
       // Умолчание React Aria — false; в reference клик по подложке
       // закрывает, пока не выключен пропом (closeOnBackdrop).
       isDismissable={isDismissable}

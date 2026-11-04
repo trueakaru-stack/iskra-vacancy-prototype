@@ -107,6 +107,7 @@ export const Stepper = forwardRef<HTMLDivElement, StepperProps>(function Stepper
             <RACButton
               key={index}
               className={clsx(stepClass, css.stepButton)}
+              data-state={state}
               aria-current={ariaCurrent}
               onPress={() => onStepPress(index)}
             >
@@ -116,7 +117,7 @@ export const Stepper = forwardRef<HTMLDivElement, StepperProps>(function Stepper
         }
 
         return (
-          <div key={index} className={stepClass} aria-current={ariaCurrent}>
+          <div key={index} className={stepClass} data-state={state} aria-current={ariaCurrent}>
             {content}
           </div>
         );

@@ -18,6 +18,12 @@
   "drag": {
     "source": "showcase"
   },
+  "minus": {
+    "source": "showcase"
+  },
+  "plus": {
+    "source": "showcase"
+  },
   "selector": {
     "source": "reference"
   },
