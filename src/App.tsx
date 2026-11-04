@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Check, ChevronsUpDown, CircleAlert, CirclePlus, LoaderCircle, Mic, Sparkle, Square } from 'lucide-react';
+import { Check, ChevronsUpDown, CircleAlert, CirclePlus, LoaderCircle, Mic, Square } from 'lucide-react';
 import { Button } from '@neobook/react/components/Button/Button';
 import { DataTable, DataTableBody, DataTableCell, DataTableColumn, DataTableHeader, DataTableRow } from '@neobook/react/components/DataTable/DataTable';
 import { Modal } from '@neobook/react/components/Modal/Modal';
@@ -159,7 +159,11 @@ export function App() {
     <div className="app-shell">
       <aside className="sidebar" aria-label="Навигация">
         <div className="brand" role="img" aria-label="Искра, Лаборатория ПИИ">
-          <span className="brand-mark"><Sparkle aria-hidden="true" size={20} /></span>
+          <span className="brand-mark">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path fillRule="evenodd" d="M12 1C12 10.9 13.1 12 23 12C13.1 12 12 13.1 12 23C12 13.1 10.9 12 1 12C10.9 12 12 10.9 12 1ZM12 9C12 10.6 13.4 12 15 12C13.4 12 12 13.4 12 15C12 13.4 10.6 12 9 12C10.6 12 12 10.6 12 9Z" />
+            </svg>
+          </span>
           <span className="brand-copy"><strong>Искра</strong><span>Лаборатория ПИИ</span></span>
           <ChevronsUpDown className="brand-chevron" aria-hidden="true" size={16} />
         </div>
