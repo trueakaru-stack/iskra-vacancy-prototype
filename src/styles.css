@@ -117,7 +117,7 @@ button:disabled { cursor: not-allowed; }
 .modal-content { animation: show-step 160ms ease-out; }
 .modal-content h2 { margin: 0 0 24px; color: var(--nb-fg-default); font-size: var(--nb-font-size-20); line-height: 1.4; font-weight: 600; }
 .fields { --nb-control-height-lg: 42px; display: grid; gap: 20px; }
-.fields label, .answer-field label, .salary-label { color: var(--nb-fg-secondary); }
+.fields label, .fields .choice-field > span:first-child, .answer-field label, .salary-label { color: var(--nb-fg-secondary); }
 .choice-field > [role='group'] { min-height: var(--nb-control-height-lg); font-size: var(--nb-font-size-16); }
 .salary-field { display: grid; gap: var(--nb-field-gap-default); }
 .salary-label { font-size: var(--nb-font-size-12); font-weight: 500; }
