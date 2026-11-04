@@ -128,7 +128,7 @@ export function App() {
     <div className="app-shell">
       <aside className="sidebar" aria-label="Навигация">
         <div className="brand">
-          <span className="brand-mark"><Sparkle aria-hidden="true" size={16} /></span>
+          <span className="brand-mark"><Sparkle aria-hidden="true" size={20} /></span>
           <span className="brand-copy"><strong>Искра</strong><span>Лаборатория ПИИ</span></span>
         </div>
         <nav aria-label="Основное меню"><div className="nav-current" aria-current="page"><List size={17} aria-hidden="true" />Все вакансии</div></nav>
@@ -137,12 +137,12 @@ export function App() {
       <main className="content">
         <div className="page-heading"><h1>Вакансии</h1></div>
         <div className="table-controls">
-          <TextField className="search-field" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} prefix={<Search size={16} />} />
-          <Select className="region-filter" label="Регион" placeholder="Регион" selectedKey={region === 'all' ? null : region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
+          <TextField className="search-field" size="lg" label="Поиск по названию" placeholder="Поиск по названию..." value={query} onChange={setQuery} prefix={<Search size={16} />} />
+          <Select className="region-filter" size="lg" label="Фильтр региона" placeholder="Регион" selectedKey={region === 'all' ? null : region} onSelectionChange={(key) => setRegion(String(key ?? 'all'))}>
             <SelectItem id="all">Все регионы</SelectItem>
             {regions.map((item) => <SelectItem id={item} key={item}>{item}</SelectItem>)}
           </Select>
-          <Button className="add-button" variant="primary" leadingIcon={<Plus size={16} />} onPress={() => {
+          <Button className="add-button" variant="primary" size="lg" leadingIcon={<Plus size={16} />} onPress={() => {
             if (editingId !== null) {
               setEditingId(null);
               setDraft(createEmptyDraft());
@@ -155,11 +155,11 @@ export function App() {
         </div>
         <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
           <DataTableHeader>
-            <DataTableColumn id="title" isRowHeader allowsSorting minWidth={280}>Название</DataTableColumn>
-            <DataTableColumn id="region" allowsSorting width={150}>Регион</DataTableColumn>
-            <DataTableColumn id="responses" allowsSorting width={130}>Отклики</DataTableColumn>
-            <DataTableColumn id="processed" allowsSorting width={150}>Обработано</DataTableColumn>
-            <DataTableColumn id="expires" allowsSorting width={155}>Истекает</DataTableColumn>
+            <DataTableColumn id="title" isRowHeader allowsSorting width="44%" minWidth={280}>Название</DataTableColumn>
+            <DataTableColumn id="region" allowsSorting width="10%">Регион</DataTableColumn>
+            <DataTableColumn id="responses" allowsSorting width="11%">Отклики</DataTableColumn>
+            <DataTableColumn id="processed" allowsSorting width="13%">Обработано</DataTableColumn>
+            <DataTableColumn id="expires" allowsSorting width="22%">Истекает</DataTableColumn>
           </DataTableHeader>
           <DataTableBody items={filtered} renderEmptyState={() => 'Вакансии не найдены'}>
             {(item) => <DataTableRow id={item.id} {...(savedDrafts[item.id] ? { onAction: () => openSaved(item.id) } : {})}>
@@ -184,7 +184,7 @@ export function App() {
               </Button>}
         </div>
       }>
-        <section className="modal-content" aria-labelledby="section-title">
+        <section key={`${phase}-${question}`} className="modal-content" aria-labelledby="section-title">
           <h2 id="section-title">{title}</h2>
           {phase === 'main' && <div className="fields">
             <TextField label="Название вакансии" isRequired placeholder="Например, руководитель отдела маркетинга" value={draft.title} onChange={(value) => setField('title', value)} />

@@ -31,32 +31,35 @@ button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 .app-shell { display: flex; min-height: 100vh; }
 .sidebar {
-  width: 270px;
-  flex: 0 0 270px;
-  padding: 26px 14px;
+  width: 338px;
+  flex: 0 0 338px;
+  padding: 29px 20px;
   border-right: 1px solid oklch(92.2% 0 0);
   background: oklch(99.4% 0 0);
 }
 .brand { display: flex; align-items: center; gap: 9px; padding: 0 8px; }
-.brand-mark { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; flex: none; color: oklch(98.5% 0 0); background: oklch(20.5% 0 0); }
-.brand-copy { display: flex; flex-direction: column; line-height: 1.25; font-size: 12px; }
-.brand-copy strong { font-size: 14px; font-weight: 600; }
+.brand-mark { width: 42px; height: 42px; border-radius: 8px; display: grid; place-items: center; flex: none; color: oklch(98.5% 0 0); background: oklch(20.5% 0 0); }
+.brand-copy { display: flex; flex-direction: column; line-height: 1.25; font-size: 14px; }
+.brand-copy strong { font-size: 16px; font-weight: 600; }
 .brand-copy span { color: oklch(45% 0 0); }
-.sidebar nav { margin-top: 32px; }
+.sidebar nav { margin-top: 36px; }
 .nav-current { display: flex; align-items: center; gap: 10px; min-height: 36px; padding: 0 10px; color: oklch(36% 0 0); }
-.content { display: flex; flex-direction: column; min-width: 0; flex: 1; padding: 30px 30px 32px; }
+.content { display: flex; flex-direction: column; min-width: 0; flex: 1; padding: 32px 32px 32px; }
 .page-heading { display: flex; align-items: center; margin-bottom: 20px; }
-.page-heading h1 { margin: 0; font-size: 22px; line-height: 1.25; font-weight: 650; }
+.page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 650; }
 .table-controls { display: flex; gap: 10px; align-items: end; margin-bottom: 16px; }
-.search-field { width: 270px; }
+.search-field { width: 332px; }
 .search-field label, .region-filter > span:first-child { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .search-field, .region-filter, .fields, .answer-field { --nb-border-default: oklch(66% 0 0); --nb-border-strong: oklch(58% 0 0); --nb-border-focus: oklch(55% 0 0); }
-.region-filter { width: 160px; }
+.region-filter { width: 132px; }
 .add-button { margin-left: auto; white-space: nowrap; }
 .vacancy-table { width: 100%; flex: 1 1 auto; min-height: 320px; }
+.vacancy-table th { background: oklch(100% 0 0); font-size: 14px; }
+.vacancy-table td { font-size: 15px; }
 .vacancy-table td:first-child { font-weight: 500; white-space: normal; overflow-wrap: anywhere; }
 .table-count { margin: 20px 0 0 2px; color: oklch(55.6% 0 0); font-size: 13px; }
 .vacancy-modal { max-width: calc(100vw - 32px); }
+.modal-content { animation: show-step 160ms ease-out; }
 .modal-content h2 { margin: 0 0 24px; font-size: 18px; line-height: 1.4; font-weight: 600; }
 .fields { display: grid; gap: 20px; }
 .review-details { display: grid; gap: 8px; margin: 0; }
@@ -81,10 +84,12 @@ button:disabled { cursor: not-allowed; }
 .generation-error { margin: 14px 0 0; font-size: 13px; }
 .spinner { animation: rotate 1s linear infinite; }
 @keyframes rotate { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } .voice-level span { transition: none; } }
+@keyframes show-step { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .spinner, .modal-content { animation: none; } .voice-level span { transition: none; } }
 @media (max-width: 760px) {
   .sidebar { width: 64px; flex-basis: 64px; padding: 20px 10px; }
   .brand { padding: 0; justify-content: center; }
+  .brand-mark { width: 34px; height: 34px; }
   .brand-copy, .nav-current { font-size: 0; }
   .nav-current { justify-content: center; padding: 0; }
   .content { padding: 24px 16px; }
@@ -95,6 +100,7 @@ button:disabled { cursor: not-allowed; }
 }
 @media (max-width: 480px) {
   .sidebar { width: 50px; flex-basis: 50px; }
+  .brand-mark { width: 30px; height: 30px; }
   .field-pair { grid-template-columns: 1fr; }
   .add-button { width: 100%; }
 }
