@@ -9,7 +9,7 @@ import { TextField } from '@neobook/react/components/TextField/TextField';
 import { Textarea } from '@neobook/react/components/Textarea/Textarea';
 import { generateDescription } from './generation';
 import { useSpeech } from './useSpeech';
-import { answerProgress, appendTranscript, createEmptyDraft, DEMO_VACANCIES, filterVacancies, isFilled, QUESTIONS, toVacancyRow, type Answers, type VacancyDraft, type VacancyRow, type VacancySections } from './vacancy';
+import { answerProgress, appendTranscript, createEmptyDraft, DEMO_VACANCIES, filterVacancies, isFilled, MAX_ANSWER_LENGTH, QUESTIONS, toVacancyRow, type Answers, type VacancyDraft, type VacancyRow, type VacancySections } from './vacancy';
 
 type Phase = 'main' | 'conditions' | 'questions' | 'review';
 type Sort = { column: string | number; direction: 'ascending' | 'descending' };
@@ -75,7 +75,7 @@ export function App() {
     setGenerationError('');
     if (phase === 'main') { setPhase('conditions'); return; }
     if (phase === 'conditions') { setPhase('questions'); return; }
-    if (phase !== 'questions' || !isFilled(draft.answers[QUESTIONS[question].id])) return;
+    if (phase !== 'questions' || !isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH) return;
     if (question < QUESTIONS.length - 1) { setQuestion((current) => current + 1); return; }
     setGenerating(true);
     try {
@@ -179,7 +179,7 @@ export function App() {
           {phase !== 'main' && <Button variant="secondary" onPress={moveBack} isDisabled={busy}>Назад</Button>}
           {phase === 'review'
             ? <Button variant="primary" onPress={save} isDisabled={!isFilled(draft.title)}>Сохранить</Button>
-            : <Button variant="primary" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && !isFilled(draft.answers[QUESTIONS[question].id]))} isPending={generating}>
+            : <Button variant="primary" onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
                 {phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
               </Button>}
         </div>
@@ -187,7 +187,7 @@ export function App() {
         <section key={`${phase}-${question}`} className="modal-content" aria-labelledby="section-title">
           <h2 id="section-title">{title}</h2>
           {phase === 'main' && <div className="fields">
-            <TextField label="Название вакансии" isRequired placeholder="Например, руководитель отдела маркетинга" value={draft.title} onChange={(value) => setField('title', value)} />
+            <TextField label="Название вакансии" isRequired maxLength={200} placeholder="Например, руководитель отдела маркетинга" value={draft.title} onChange={(value) => setField('title', value)} />
             <TextField label="Регион" placeholder="Например, Москва" value={draft.region} onChange={(value) => setField('region', value)} />
             <TextField label="Опыт работы" placeholder="Например, от 3 лет" value={draft.experience} onChange={(value) => setField('experience', value)} />
           </div>}
@@ -218,6 +218,7 @@ export function App() {
               </div>
             </div>
             {speech.message && <p className={speech.state === 'error' ? 'voice-message error' : 'voice-message'} role="status">{speech.message}</p>}
+            {draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH && <p className="generation-error" role="alert">Сократите ответ до 4000 символов, чтобы продолжить.</p>}
             {generationError && <p className="generation-error" role="alert">{generationError}</p>}
           </div>}
           {phase === 'review' && sections && <div className="fields">

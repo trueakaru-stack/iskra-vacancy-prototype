@@ -1,8 +1,7 @@
-import { QUESTIONS, type Answers, type VacancySections } from '../../src/vacancy';
+import { MAX_ANSWER_LENGTH, QUESTIONS, type Answers, type VacancySections } from '../../src/vacancy';
 
 const MODEL = '@cf/qwen/qwen3-30b-a3b-fp8';
-const MAX_BODY_BYTES = 32_000;
-const MAX_ANSWER_LENGTH = 4_000;
+const MAX_BODY_BYTES = 50_000;
 
 interface Environment {
   AI: { run: (model: string, options: Record<string, unknown>) => Promise<unknown> };

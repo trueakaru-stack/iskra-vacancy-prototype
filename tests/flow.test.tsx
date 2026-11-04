@@ -83,4 +83,17 @@ describe('создание вакансии', () => {
     expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Текст сохранён');
     expect(within(modal).getByRole('button', { name: 'Повторить запись' })).toBeInTheDocument();
   });
+
+  it('объясняет превышение длины и не теряет введённый текст', async () => {
+    mount();
+    const modal = await goToQuestions();
+    const answer = within(modal).getByLabelText('Ваш ответ');
+    const text = 'а'.repeat(4001);
+    fireEvent.change(answer, { target: { value: text } });
+    expect(answer).toHaveValue(text);
+    expect(within(modal).getByText(/сократите ответ до 4000/i)).toBeInTheDocument();
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+    fireEvent.change(answer, { target: { value: text.slice(0, 4000) } });
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeEnabled();
+  });
 });

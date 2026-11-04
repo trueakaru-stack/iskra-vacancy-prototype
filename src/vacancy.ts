@@ -1,3 +1,5 @@
+export const MAX_ANSWER_LENGTH = 4_000;
+
 export const QUESTIONS = [
   {
     id: 'tasks',

@@ -29,6 +29,14 @@ describe('генерация описания', () => {
     expect(run).not.toHaveBeenCalled();
   });
 
+  it('принимает максимально длинные ответы на русском', async () => {
+    const long = 'а'.repeat(4000);
+    const run = vi.fn().mockResolvedValue({ response: JSON.stringify(sections) });
+    const result = await handleRequest(request({ title: '', answers: { tasks: long, project: long, plans: long, skills: long } }), { AI: { run }, ALLOWED_ORIGIN: 'https://example.com' });
+    expect(result.status).toBe(200);
+    expect(run).toHaveBeenCalledOnce();
+  });
+
   it('сообщает об ошибке, если модель вернула неполный результат', async () => {
     const run = vi.fn().mockResolvedValue({ response: '{"tasks":"Только один блок"}' });
     const result = await handleRequest(request({ title: '', answers }), { AI: { run }, ALLOWED_ORIGIN: 'https://example.com' });
