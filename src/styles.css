@@ -50,12 +50,13 @@ button:disabled { cursor: not-allowed; }
 .page-heading h1 { margin: 0; font-size: 24px; line-height: 1.25; font-weight: 650; }
 .table-controls { --nb-control-height-lg: 42px; display: flex; gap: 10px; align-items: end; margin-bottom: 21px; }
 .search-field { width: 332px; }
+.search-field input, .fields input, .fields textarea { font-size: var(--nb-font-size-16); }
 .search-field label, .region-filter > span:first-child { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 .search-field, .region-filter, .fields, .answer-field { --nb-border-default: oklch(66% 0 0); --nb-border-strong: oklch(58% 0 0); --nb-border-focus: oklch(55% 0 0); }
 .region-wrap { position: relative; width: 132px; flex: none; }
 .region-icon { position: absolute; z-index: 1; top: 50%; left: 12px; width: 18px; height: 18px; transform: translateY(-50%); pointer-events: none; }
 .region-filter { width: 100%; }
-.region-filter button { justify-content: flex-start; padding-left: 36px; font-weight: 600; }
+.region-filter button { justify-content: flex-start; padding-left: 36px; font-size: var(--nb-font-size-16); font-weight: 600; }
 .region-filter button > svg { display: none; }
 .region-filter button [data-placeholder] { color: var(--nb-fg-default); }
 .add-button { margin-left: auto; white-space: nowrap; }
@@ -92,7 +93,7 @@ button:disabled { cursor: not-allowed; }
 .question-text { max-width: 95%; color: oklch(14.5% 0 0); margin: 0 0 26px; font-size: 18px; line-height: 1.25; font-weight: 400; }
 .answer-wrap { position: relative; }
 .answer-field label { font-size: 14px; font-weight: 400; }
-.answer-field textarea { height: 114px; min-height: 114px; padding-bottom: 60px; border-radius: var(--nb-radius-lg); font-size: 14px; resize: none; }
+.answer-field textarea { height: 114px; min-height: 114px; padding-bottom: 60px; padding-inline-end: 72px; border-radius: var(--nb-radius-lg); font-size: var(--nb-font-size-16); resize: none; }
 .voice-control { position: absolute; bottom: 10px; right: 10px; display: flex; align-items: center; gap: 10px; }
 .voice-ring { --nb-bg-muted: oklch(88% 0 0); display: grid; place-items: center; position: relative; }
 .voice-ring > * { grid-area: 1 / 1; }
