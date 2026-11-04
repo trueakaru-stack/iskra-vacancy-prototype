@@ -61,7 +61,7 @@ function orderedVacancies(rows: VacancyRow[], sort: Sort): VacancyRow[] {
 
 export function App() {
   const [vacancies, setVacancies] = useState<VacancyRow[]>([...DEMO_VACANCIES]);
-  const [savedDrafts, setSavedDrafts] = useState<Record<string, { draft: VacancyDraft; sections: VacancySections }>>({});
+  const [savedDrafts, setSavedDrafts] = useState<Record<string, { draft: VacancyDraft; sections: VacancySections; sectionEdits: Partial<VacancySections> }>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState('all');
@@ -69,6 +69,7 @@ export function App() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<VacancyDraft>(createEmptyDraft);
   const [sections, setSections] = useState<VacancySections | null>(null);
+  const [sectionEdits, setSectionEdits] = useState<Partial<VacancySections>>({});
   const [phase, setPhase] = useState<Phase>('main');
   const [question, setQuestion] = useState(0);
   const [generating, setGenerating] = useState(false);
@@ -98,13 +99,15 @@ export function App() {
   const moveForward = async () => {
     speech.reset();
     setGenerationError('');
+    if (!isFilled(draft.title)) { setPhase('main'); return; }
     if (phase === 'main') { setPhase('conditions'); return; }
     if (phase === 'conditions') { setPhase('questions'); return; }
     if (phase !== 'questions' || !isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH) return;
     if (question < QUESTIONS.length - 1) { setQuestion((current) => current + 1); return; }
     setGenerating(true);
     try {
-      setSections(await generateDescription(draft.title, draft.answers));
+      const generated = await generateDescription(draft.title, draft.answers);
+      setSections({ ...generated, ...sectionEdits });
       setPhase('review');
     } catch (error) {
       setGenerationError(error instanceof Error ? error.message : 'Не удалось подготовить описание.');
@@ -114,13 +117,14 @@ export function App() {
   const save = () => {
     if (!isFilled(draft.title) || !sections) return;
     const id = editingId ?? `draft-${Date.now()}`;
-    setSavedDrafts((current) => ({ ...current, [id]: { draft, sections } }));
+    setSavedDrafts((current) => ({ ...current, [id]: { draft, sections, sectionEdits } }));
     setVacancies((current) => editingId
       ? current.map((item) => item.id === id ? toVacancyRow(draft, id) : item)
       : [toVacancyRow(draft, id), ...current]);
     setEditingId(null);
     setDraft(createEmptyDraft());
     setSections(null);
+    setSectionEdits({});
     setPhase('main');
     setQuestion(0);
     setOpen(false);
@@ -132,6 +136,7 @@ export function App() {
     setEditingId(id);
     setDraft(saved.draft);
     setSections(saved.sections);
+    setSectionEdits(saved.sectionEdits);
     setQuestion(3);
     setPhase('review');
     setGenerationError('');
@@ -177,6 +182,7 @@ export function App() {
               setEditingId(null);
               setDraft(createEmptyDraft());
               setSections(null);
+              setSectionEdits({});
               setPhase('main');
               setQuestion(0);
             }
@@ -208,7 +214,7 @@ export function App() {
             ? <Button variant="primary" size="lg" onPress={save} isDisabled={!isFilled(draft.title)}>Сохранить</Button>
             : <>
               {generating && <span className="reduced-motion-status" role="status">Создаём описание…</span>}
-              <Button className="generation-button" variant="primary" size="lg" aria-label={generating ? 'Создаём описание' : undefined} onPress={() => void moveForward()} isDisabled={speech.busy || (phase === 'conditions' && salaryInvalid) || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
+              <Button className="generation-button" variant="primary" size="lg" aria-label={generating ? 'Создаём описание' : undefined} onPress={() => void moveForward()} isDisabled={speech.busy || !isFilled(draft.title) || (phase === 'conditions' && salaryInvalid) || (phase === 'questions' && (!isFilled(draft.answers[QUESTIONS[question].id]) || draft.answers[QUESTIONS[question].id].length > MAX_ANSWER_LENGTH))} isPending={generating}>
                 {phase === 'questions' && question === 3 ? 'Создать описание' : 'Далее'}
               </Button>
               </>}
@@ -262,7 +268,10 @@ export function App() {
           </div>}
           {phase === 'review' && sections && <div className="fields">
             {details.length > 0 && <dl className="review-details">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
-            {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={sections[id]} onChange={(value) => setSections((current) => current ? { ...current, [id]: value } : current)} />)}
+            {QUESTIONS.map(({ id, section }) => <Textarea size="lg" key={id} label={section} rows={4} value={sections[id]} onChange={(value) => {
+              setSections((current) => current ? { ...current, [id]: value } : current);
+              setSectionEdits((current) => ({ ...current, [id]: value }));
+            }} />)}
             {draft.advantages && <Textarea size="lg" label="Будет преимуществом" rows={3} value={draft.advantages} onChange={(value) => setField('advantages', value)} />}
             {draft.benefits && <Textarea size="lg" label="Что предлагаем" rows={3} value={draft.benefits} onChange={(value) => setField('benefits', value)} />}
             {!isFilled(draft.title) && <p className="generation-error" role="alert">Укажите название вакансии на шаге «Основное», чтобы сохранить черновик.</p>}

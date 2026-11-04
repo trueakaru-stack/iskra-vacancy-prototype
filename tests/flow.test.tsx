@@ -29,6 +29,26 @@ async function goToQuestions() {
 }
 
 describe('создание вакансии', () => {
+  it('не позволяет уйти с первого шага без названия, включая ответ из пробелов', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
+    const modal = await screen.findByRole('dialog');
+    const title = within(modal).getByLabelText(/название вакансии/i);
+    const next = within(modal).getByRole('button', { name: 'Далее' });
+    expect(next).toBeDisabled();
+    fireEvent.change(title, { target: { value: '   ' } });
+    expect(next).toBeDisabled();
+    fireEvent.click(next);
+    expect(within(modal).getByRole('heading', { name: 'Основное' })).toBeInTheDocument();
+    fireEvent.change(title, { target: { value: ' Дизайнер ' } });
+    expect(next).toBeEnabled();
+    fireEvent.click(next);
+    expect(within(modal).getByRole('heading', { name: 'Условия' })).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
+    fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: '' } });
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+  });
+
   it('показывает нужные колонки и меняет порядок вакансий при сортировке откликов', () => {
     mount();
     expect(within(screen.getByRole('navigation', { name: 'Основное меню' })).getByText('Вакансии')).toBeInTheDocument();
@@ -107,6 +127,7 @@ describe('создание вакансии', () => {
     mount();
     fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
     const modal = await screen.findByRole('dialog');
+    fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: 'Дизайнер' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
     const from = within(modal).getByRole('textbox', { name: 'Зарплата от' });
     const to = within(modal).getByRole('textbox', { name: 'Зарплата до' });
@@ -173,6 +194,56 @@ describe('создание вакансии', () => {
     await act(async () => { fireEvent.click(row); });
     const reopened = await screen.findByRole('dialog');
     expect(within(reopened).getByLabelText('Основные обязанности')).toHaveValue('Изучать потребности');
+  });
+
+  it('сохраняет правки и очищенный раздел при ошибке и повторной генерации, обновляя остальные разделы', async () => {
+    mount();
+    const modal = await goToQuestions();
+    for (let index = 0; index < 4; index++) {
+      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
+      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
+    }
+    await within(modal).findByLabelText('Основные обязанности');
+    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Мои обязанности' } });
+    fireEvent.change(within(modal).getByLabelText('Планы на полгода'), { target: { value: '' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Обновлённые навыки' } });
+    vi.mocked(generateDescription).mockRejectedValueOnce(new Error('Сервис недоступен'));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Создать описание' }));
+    expect(await within(modal).findByRole('alert')).toHaveTextContent('Сервис недоступен');
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Обновлённые навыки');
+    vi.mocked(generateDescription).mockResolvedValueOnce({ tasks: 'Новые обязанности', project: 'Новый проект', plans: 'Новые планы', skills: 'Новые навыки' });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Создать описание' }));
+    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Мои обязанности');
+    expect(within(modal).getByLabelText('Планы на полгода')).toHaveValue('');
+    expect(within(modal).getByLabelText('О проекте')).toHaveValue('Новый проект');
+    expect(within(modal).getByLabelText('Требования и ключевые навыки')).toHaveValue('Новые навыки');
+  });
+
+  it('защищает правки после открытия сохранённого черновика и не переносит их в новую вакансию', async () => {
+    mount();
+    const modal = await goToQuestions();
+    for (let index = 0; index < 4; index++) {
+      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
+      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
+    }
+    await within(modal).findByLabelText('Основные обязанности');
+    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Мои обязанности' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
+    const reopened = await screen.findByRole('dialog');
+    fireEvent.click(within(reopened).getByRole('button', { name: 'Назад' }));
+    fireEvent.click(within(reopened).getByRole('button', { name: 'Создать описание' }));
+    expect(await within(reopened).findByLabelText('Основные обязанности')).toHaveValue('Мои обязанности');
+    fireEvent.click(within(reopened).getByRole('button', { name: 'Сохранить' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const nextModal = await goToQuestions();
+    for (let index = 0; index < 4; index++) {
+      fireEvent.change(within(nextModal).getByLabelText('Ваш ответ'), { target: { value: `Другой ответ ${index + 1}` } });
+      fireEvent.click(within(nextModal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
+    }
+    expect(await within(nextModal).findByLabelText('Основные обязанности')).toHaveValue('Исследования');
   });
 
   it('позволяет вводить ответ вручную, если браузер не поддерживает распознавание', async () => {
