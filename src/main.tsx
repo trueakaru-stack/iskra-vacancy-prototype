@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { NeoBookProvider } from '@neobook/react/theme/NeoBookProvider';
+import { LocaleProvider } from '@neobook/i18n';
 import '@neobook/tokens/tokens.css';
 import '@fontsource/manrope/cyrillic-700.css';
 import '@fontsource/manrope/latin-700.css';
@@ -9,8 +9,8 @@ import './styles.css';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <NeoBookProvider locale="ru-RU" defaultPreference="light" persist={false}>
+    <LocaleProvider locale="ru-RU">
       <App />
-    </NeoBookProvider>
+    </LocaleProvider>
   </React.StrictMode>,
 );

@@ -1,31 +1,3 @@
-:root[data-theme='light'] {
-  --nb-radius-xs: 12px;
-  --nb-radius-sm: 12px;
-  --nb-radius-md: 12px;
-  --nb-radius-lg: 12px;
-  --nb-radius-xl: 12px;
-  --nb-radius-2xl: 12px;
-  --nb-button-padding-inline-lg: 32px;
-  --nb-bg-canvas: oklch(100% 0 0);
-  --nb-bg-surface: oklch(100% 0 0);
-  --nb-bg-subtle: oklch(97% 0 0);
-  --nb-bg-muted: oklch(97% 0 0);
-  --nb-bg-hover: oklch(97% 0 0);
-  --nb-border-subtle: #d6d6e2;
-  --nb-border-default: #d6d6e2;
-  --nb-border-strong: #b6b6c6;
-  --nb-border-focus: oklch(70.8% 0 0);
-  --nb-fg-default: oklch(14.5% 0 0);
-  --nb-fg-secondary: oklch(45% 0 0);
-  --nb-fg-muted: oklch(55.6% 0 0);
-  --nb-fg-on-primary: oklch(98.5% 0 0);
-  --nb-action-primary-bg: oklch(20.5% 0 0);
-  --nb-action-primary-bg-hover: oklch(36% 0 0);
-  --nb-action-primary-bg-active: oklch(14.5% 0 0);
-  --nb-action-primary-fg: oklch(20.5% 0 0);
-  --nb-action-primary-fg-active: oklch(14.5% 0 0);
-}
-
 * { box-sizing: border-box; }
 html, body, #root { min-height: 100%; margin: 0; }
 body {
@@ -85,7 +57,7 @@ button:disabled { cursor: not-allowed; }
 .region-filter button [data-placeholder] { color: var(--nb-fg-default); }
 .add-button { margin-left: auto; white-space: nowrap; }
 .table-controls .add-icon { width: 18px; height: 18px; flex: none; }
-.vacancy-table { width: 100%; flex: 1 1 auto; min-height: 320px; }
+.vacancy-table { width: 100%; flex: 1 1 auto; min-height: 320px; border-radius: var(--nb-radius-lg); }
 .vacancy-table th { background: oklch(100% 0 0); font-size: 14px; font-weight: 700; padding-block: var(--nb-space-8); }
 .vacancy-table td { font-size: 15px; }
 .vacancy-table td:first-child { font-weight: 700; white-space: normal; overflow-wrap: anywhere; }
@@ -100,11 +72,12 @@ button:disabled { cursor: not-allowed; }
 .vacancy-modal > [role='dialog'] > :last-child { background: transparent; border: 0; padding: 0 var(--nb-space-9) var(--nb-space-9); }
 .vacancy-modal textarea { resize: none; }
 @supports (corner-shape: superellipse(2.25)) {
-  .vacancy-table { corner-shape: superellipse(2.25); }
-  /* Приближение контура Figma с cornerSmoothing 1 по методу Product Catalog. */
+  .vacancy-table { border-radius: 26px; corner-shape: superellipse(2.25); }
+  /* Сглаженный контур с согласованной кривой скругления. */
   .vacancy-modal { border-radius: 34.667px; corner-shape: superellipse(2.25); }
-  .brand-mark, button:not(.voice-button), .search-field div:has(> input), .fields div:has(> input),
+  .brand-mark, button:not(.voice-button), .search-field div:has(> input), .select-search div:has(> input), .fields div:has(> input),
   .fields textarea, .answer-field textarea, .choice-field > [role='group'] { border-radius: 26px; corner-shape: superellipse(2.25); }
+  .choice-field [data-select-tag] { border-radius: 8.667px; corner-shape: superellipse(2.25); }
 }
 .sticky-steps { position: sticky; top: 0; z-index: 2; padding-bottom: var(--nb-space-9); background: var(--nb-bg-surface); }
 .sticky-steps::before { content: ''; position: absolute; inset-inline: 0; bottom: 100%; height: var(--nb-space-8); background: inherit; }
@@ -120,11 +93,16 @@ button:disabled { cursor: not-allowed; }
 .vacancy-steps > [data-state='current'] > :first-child { background: var(--nb-action-primary-bg); border-color: var(--nb-action-primary-bg); color: var(--nb-fg-on-primary); box-shadow: none; }
 .vacancy-steps > [data-state='complete'] > :first-child { background: var(--nb-bg-surface); border-color: var(--nb-action-primary-bg); color: var(--nb-action-primary-bg); }
 .modal-content { animation: show-step 160ms ease-out; }
-.modal-content h2 { margin: 0 0 24px; color: var(--nb-fg-default); font-size: var(--nb-font-size-20); line-height: 1.4; font-weight: 700; }
+.modal-content h2 { margin: 0 0 12px; color: var(--nb-fg-default); font-size: var(--nb-font-size-20); line-height: 1.4; font-weight: 700; }
 .fields { --nb-control-height-lg: 42px; display: grid; gap: 20px; }
+.fields-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 20px; }
+.fields-row > * { min-width: 0; }
 .fields textarea { resize: none; }
 .fields label, .fields .choice-field > span:first-child, .answer-field label, .salary-label { color: var(--nb-fg-secondary); }
 .choice-field > [role='group'] { min-height: var(--nb-control-height-lg); font-size: var(--nb-font-size-16); }
+.choice-field [data-select-tag] { max-width: 100%; overflow-wrap: anywhere; }
+.select-search { flex: none; padding: var(--nb-space-2); }
+.select-search label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .salary-field { display: grid; gap: var(--nb-field-gap-default); }
 .salary-label { font-size: var(--nb-font-size-12); font-weight: 500; }
 .salary-range { display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr); align-items: center; }

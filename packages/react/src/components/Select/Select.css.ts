@@ -31,7 +31,7 @@ export const trigger = style({
   width: '100%',
   background: vars.bg.surface,
   border: `1px solid ${vars.border.default}`,
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
   color: vars.fg.default,
   fontFamily: 'inherit',
   fontSize: vars.fontSize[13],
@@ -206,7 +206,7 @@ export const popover = style({
   padding: vars.space[2],
   background: vars.bg.surface,
   border: `1px solid ${vars.border.subtle}`,
-  borderRadius: vars.radius.md,
+  borderRadius: vars.radius.lg,
   boxShadow: vars.shadow.lg,
   // Слой из общей шкалы, а не магическое число.
   zIndex: vars.layer.dropdown,
@@ -238,7 +238,7 @@ export const item = style({
   fontSize: vars.fontSize[13],
   color: vars.fg.default,
   cursor: 'pointer',
-  borderRadius: vars.radius.xs,
+  borderRadius: vars.radius.lg,
   outline: 'none',
 
   selectors: {
@@ -356,9 +356,8 @@ globalStyle(`${value} [slot="description"]`, {
 
 /*
  * Раздел «Multi-select» витрины, пример «Default — tags inside trigger».
- * Классов у примера нет: триггер, теги, флажки и подвал списка заданы
- * инлайновыми стилями поверх .tag, .check, .popover, .popover__item,
- * .popover__sep и .btn. Значения ниже взяты из этих инлайнов.
+ * Триггер, теги и флажки используют исходные стили компонентов.
+ * Геометрия вложенных тегов учитывает равный отступ от границы поля.
  *
  * Разметка разошлась с витриной в одном месте. Там триггер — один
  * `<div role="button">`, и теги с крестиками лежат внутри него: кнопка
@@ -374,7 +373,7 @@ globalStyle(`${value} [slot="description"]`, {
  * вопрос записан в DESIGN.md.
  */
 export const multiTrigger = style({
-  // В макетах border-box стоит глобально: min-height 30px — вместе с рамкой.
+  // Высота включает рамку.
   boxSizing: 'border-box',
   position: 'relative',
   display: 'flex',
@@ -382,14 +381,14 @@ export const multiTrigger = style({
   flexWrap: 'wrap',
   gap: vars.space[2],
   minHeight: vars.controlHeight.md,
-  // padding: 4px 30px 4px 8px — конечное поле держит место под каретку.
-  paddingBlock: vars.space[2],
-  paddingInlineStart: vars.space[4],
+  // Рамка включена в равные отступы; справа остаётся место под каретку.
+  paddingBlock: `calc(${vars.space[4]} - 1px)`,
+  paddingInlineStart: `calc(${vars.space[4]} - 1px)`,
   paddingInlineEnd: vars.select.multiPaddingInlineEnd,
   width: '100%',
   background: vars.bg.surface,
   border: `1px solid ${vars.border.default}`,
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
   color: vars.fg.default,
   fontSize: vars.fontSize[13],
   cursor: 'pointer',
@@ -483,15 +482,14 @@ export const tagGroup = style({
 });
 
 /**
- * .tag в триггере: height 20px, padding 0 4px 0 8px и font-size 11px инлайном
- * поверх 22px и 12px базового тега.
+ * Высота и радиус тега выводятся из высоты, радиуса и отступа поля.
  */
 export const multiTag = style({
-  minHeight: vars.select.multiTagHeight,
-  // Вертикальные поля обнулены инлайном витрины; у базового тега они есть —
-  // с ними тег выходил 22px вместо 20px.
+  minHeight: `calc(${vars.controlHeight.lg} - ${vars.space[4]} * 2)`,
+  borderRadius: `calc(${vars.radius.lg} - ${vars.space[4]})`,
+  // Вертикальные отступы задаёт коробка поля.
   paddingBlock: 0,
-  fontSize: vars.fontSize[11],
+  fontSize: vars.fontSize[12],
   // Кнопка Select лежит под тегами: позиционированный элемент без z-index
   // рисуется поверх непозиционированных соседей, и без relative она
   // закрыла бы теги.
@@ -525,15 +523,16 @@ export const multiCaret = style({
 globalStyle(`${multiCaret} > svg`, {
   width: vars.iconSize.md,
   height: vars.iconSize.md,
+  transition: `transform ${vars.duration.fast} ${vars.ease.out}`,
 });
+
+globalStyle(`${select}[data-open] ${multiCaret} > svg`, { transform: 'rotate(180deg)' });
 
 /**
  * .popover с padding 4px, растянутый по триггеру от края до края.
  * Ограничения ширины .dd__pop к нему не относятся: ширину задаёт триггер.
  *
- * Прокручивается список, а не поповер: подвал со счётчиком и кнопками
- * остаётся на месте — так устроен пример «With search, select-all, members»
- * того же раздела, где у поповера flex-колонка и прокрутка у списка.
+ * Прокручивается список, а поле поиска при его наличии остаётся на месте.
  */
 export const popoverMultiple = style({
   width: 'var(--trigger-width)',
@@ -549,6 +548,8 @@ export const listBoxMultiple = style({
   minHeight: 0,
   overflow: 'auto',
 });
+
+export const searchListBox = style({ height: vars.popover.maxHeight, flex: '1 1 auto' });
 
 /**
  * .check в пункте: 14×14px и margin-right 2px инлайном поверх 16px
@@ -585,31 +586,4 @@ export const itemCheckbox = style({
   '@media': {
     '(prefers-reduced-motion: reduce)': { transitionDuration: '0ms' },
   },
-});
-
-/** .popover__sep над подвалом. */
-export const footerSeparator = style({
-  // height: 1px → blockSize: линия обязана остаться поперёк письма
-  blockSize: '1px',
-  flex: 'none',
-  background: vars.border.subtle,
-  marginBlock: vars.space[2],
-});
-
-/** Подвал: padding 6px 10px, flex, gap 8px. */
-export const footer = style({
-  display: 'flex',
-  alignItems: 'center',
-  gap: vars.space[4],
-  flex: 'none',
-  paddingBlock: vars.space[3],
-  paddingInline: vars.fieldPaddingInline.md,
-});
-
-/** «3 of 6 selected» — .muted, 11px, flex: 1. */
-export const footerCount = style({
-  flex: 1,
-  minWidth: 0,
-  fontSize: vars.fontSize[11],
-  color: vars.fg.muted,
 });

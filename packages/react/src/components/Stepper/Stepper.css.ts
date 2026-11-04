@@ -249,7 +249,7 @@ export const stepButton = style({
     // button.stepper__step:focus-visible
     '&[data-focus-visible]': {
       boxShadow: vars.focus.ring,
-      borderRadius: vars.radius.sm,
+      borderRadius: vars.radius.lg,
     },
   },
 });

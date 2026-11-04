@@ -1,33 +1,7 @@
 import { style, styleVariants } from '@vanilla-extract/css';
 import { vars } from '@neobook/tokens/contract';
 
-/*
- * Перенос reference/src/components/Tag/Tag.css.
- *
- * Селекторы макета и их судьба:
- *
- * `.tag`                    → `base`
- * `.tag--primary`           → `variant.primary`
- * `.tag--accent`            → `variant.accent`
- * `.tag__close`             → `close`
- * `.tag__close:hover`       → `close`, селектор `&[data-hovered]`
- * `.tag--primary .tag__close` → `close`, селектор от `variant.primary`
- * `.tag--accent .tag__close`  → `close`, селектор от `variant.accent`
- *
- * Тот же набор правил продублирован в reference/src/components/Combobox/Combobox.css
- * (`.tag`, `.tag__close`, `.tag__close:hover`) — значения совпадают до символа,
- * переносить второй раз нечего. Правила `.combobox--multi .tag` и
- * `.combobox--multi .tag > :first-child` (flex: none, max-width 140px, обрезка
- * подписи многоточием) относятся к окружению внутри поля Combobox, а не к тегу:
- * они переедут вместе с Combobox.
- *
- * Порядок блоков повторяет порядок правил в макете: база → варианты → кнопка
- * закрытия. В vanilla-extract специфичность у классов одинаковая, и при равной
- * специфичности решает порядок объявления. Это существенно для цвета глифа:
- * в макетах `.tag--primary .tag__close` (0,2,0) стоит после `.tag__close:hover`
- * (0,1,1) и перебивает его — у цветного тега наведение меняет только подложку,
- * а цвет крестика остаётся тоновым.
- */
+/** Чип выбранного значения с доступной кнопкой удаления. */
 
 /** `.tag` */
 export const base = style({
@@ -66,7 +40,7 @@ export const base = style({
    */
   paddingBlock: vars.space[1],
 
-  borderRadius: vars.radius.xs,
+  borderRadius: vars.radius.lg,
 
   // font: var(--fw-medium) var(--fs-12)/1 var(--font-sans)
   fontFamily: vars.fontFamily.sans,
@@ -139,29 +113,9 @@ export const base = style({
 /**
  * `.tag--primary`, `.tag--accent`.
  *
- * В макетах вариант задан именами тона `primary`/`accent`; проп в порте
- * называется `variant`, как у Badge.
+ * В сценарии используется нейтральный вариант выбранного значения.
  */
-export const variant = styleVariants({
-  // `.tag` без модификатора.
-  neutral: {},
-
-  // .tag--primary { border-color: var(--primary-border) }
-  primary: {
-    background: vars.action.primary.bgSubtle,
-    color: vars.action.primary.fg,
-    borderColor: vars.action.primary.border,
-  },
-
-  // .tag--accent { border-color: var(--accent-bg) } — именно bg, а не border:
-  // рамка у акцентного тега насыщеннее, чем у основного. Перенесено как есть,
-  // расхождение вынесено дизайнерам — см. DESIGN.md, раздел Tag.
-  accent: {
-    background: vars.action.accent.bgSubtle,
-    color: vars.action.accent.fg,
-    borderColor: vars.action.accent.bg,
-  },
-});
+export const variant = styleVariants({ neutral: {} });
 
 /** `.tag__close` */
 export const close = style({
@@ -200,8 +154,6 @@ export const close = style({
 
     // .tag--primary .tag__close, .tag--accent .tag__close — объявлены после
     // наведения, как в макетах: у цветного тега крестик тон не теряет.
-    [`${variant.primary} &`]: { color: vars.action.primary.fg },
-    [`${variant.accent} &`]: { color: vars.action.accent.fg },
   },
 });
 

@@ -16,6 +16,9 @@ import {
   TagGroup as RACTagGroup,
   TagList as RACTagList,
   VisuallyHidden as RACVisuallyHidden,
+  Autocomplete,
+  Virtualizer,
+  ListLayout,
   type SelectProps as RACSelectProps,
   type SelectRenderProps as RACSelectRenderProps,
   type SelectValueRenderProps as RACSelectValueRenderProps,
@@ -26,10 +29,10 @@ import {
   composeRenderProps,
 } from 'react-aria-components';
 import clsx from 'clsx';
-import { useMessages, useNumberFormatter } from '@neobook/i18n';
+import { useMessages } from '@neobook/i18n';
 import { tokenValues } from '@neobook/tokens';
 import { IconCheck, IconChevronDown } from '@neobook/icons';
-import { Button } from '../Button/Button.js';
+import { TextField } from '../TextField/TextField.js';
 import { Tag } from '../Tag/index.js';
 import { TruncatedLabel, truncatedLabelClass } from '../TextField/TruncatedLabel.js';
 import * as css from './Select.css.js';
@@ -63,6 +66,9 @@ export interface SelectProps<T extends object, M extends SelectSelectionMode = '
   errorMessage?: ReactNode | ((validation: { validationErrors: string[] }) => ReactNode);
   /** Текст до выбора. По умолчанию — локализованное «Выберите…». */
   placeholder?: string;
+  searchable?: boolean;
+  searchFilter?: (value: string, query: string) => boolean;
+  selectAllKey?: RACKey;
   /**
    * Высота поля. Действует только при выборе одного значения: поле
    * с несколькими значениями растёт под теги.
@@ -96,9 +102,8 @@ export interface SelectProps<T extends object, M extends SelectSelectionMode = '
  * только видимая часть.
  *
  * `selectionMode="multiple"` показывает выбранное тегами в поле, а пункты
- * списка — с флажками. Список не закрывается после выбора; внизу — счётчик
- * выбранного, «Очистить» и «Применить», которая закрывает список. Значение
- * меняется сразу, при каждом нажатии на пункт или крестик тега.
+ * списка — с флажками. Выбор применяется сразу; список закрывается кликом
+ * вне поля, повторным нажатием на триггер или клавишей Escape.
  *
  * При нуле вариантов список не раскрывается. Для незагруженного справочника
  * задавайте `isDisabled` и поясняйте причину в `description`.
@@ -117,17 +122,21 @@ function MultiTrigger({
   buttonRef,
   isInvalid,
   isDisabled,
+  selectAllKey,
 }: {
   triggerRef: React.Ref<HTMLDivElement>;
   buttonRef: React.ForwardedRef<HTMLButtonElement>;
   isInvalid: boolean;
   isDisabled: boolean;
+  selectAllKey?: RACKey;
 }) {
   const { t } = useMessages();
   // Тип контекста в поставке React Aria 1.20 теряет параметр режима —
   // значение приводится к состоянию с несколькими значениями.
   const state = useContext(RACSelectStateContext) as RACSelectState<object, 'multiple'> | null;
-  const selectedNodes = state?.selectedItems ?? [];
+  const allNodes = state?.selectedItems ?? [];
+  const selectedAll = allNodes.find((node) => node.key === selectAllKey);
+  const selectedNodes = selectedAll ? [selectedAll] : allNodes;
 
   return (
     <RACGroup
@@ -166,13 +175,13 @@ function MultiTrigger({
           {...(isDisabled && { disabledKeys: selectedNodes.map((node) => node.key) })}
           onRemove={(keys: Set<RACKey>) => {
             if (state && Array.isArray(state.value)) {
-              state.setValue(state.value.filter((key) => !keys.has(key)));
+              state.setValue(selectAllKey !== undefined && keys.has(selectAllKey) ? [] : state.value.filter((key) => !keys.has(key)));
             }
           }}
         >
           <RACTagList className={css.tagGroup} items={selectedNodes}>
             {(node: (typeof selectedNodes)[number]) => (
-              <Tag id={node.key} className={css.multiTag} textValue={node.textValue}>
+              <Tag id={node.key} className={css.multiTag} data-select-tag="" textValue={node.textValue}>
                 {node.textValue}
               </Tag>
             )}
@@ -187,47 +196,15 @@ function MultiTrigger({
   );
 }
 
-/** Подвал списка: «Выбрано 3 из 6», «Очистить» и «Применить». */
-function MultiFooter() {
-  const { t } = useMessages();
-  const number = useNumberFormatter();
-  const state = useContext(RACSelectStateContext) as RACSelectState<object, 'multiple'> | null;
-  if (!state) return null;
-
-  const count = state.selectedItems.length;
-  let total = 0;
-  for (const key of state.collection.getKeys()) {
-    if (state.collection.getItem(key)?.type === 'item') total++;
-  }
-
-  return (
-    <>
-      <div className={css.footerSeparator} />
-      <div className={css.footer}>
-        <span className={css.footerCount}>
-          {t('select.selectedOfTotal', {
-            count,
-            selected: number.format(count),
-            total: number.format(total),
-          })}
-        </span>
-        <Button variant="ghost" size="xs" onPress={() => state.setValue([])}>
-          {t('common.clear')}
-        </Button>
-        <Button variant="primary" size="xs" onPress={() => state.close()}>
-          {t('select.apply')}
-        </Button>
-      </div>
-    </>
-  );
-}
-
 function SelectInner<T extends object, M extends SelectSelectionMode = 'single'>(
   {
     label,
     description,
     errorMessage,
     placeholder,
+    searchable = false,
+    searchFilter,
+    selectAllKey,
     size = 'md',
     showSelectedCheck = true,
     truncateLabel = false,
@@ -261,6 +238,7 @@ function SelectInner<T extends object, M extends SelectSelectionMode = 'single'>
               buttonRef={ref}
               isInvalid={isInvalid}
               isDisabled={isDisabled}
+              selectAllKey={selectAllKey}
             />
           ) : (
             <RACButton
@@ -301,13 +279,17 @@ function SelectInner<T extends object, M extends SelectSelectionMode = 'single'>
             // растянутой кнопки внутри — она на рамку уже.
             {...(isMultiple && { triggerRef: multiTriggerRef })}
           >
-            <RACListBox
+            {searchable ? <Autocomplete filter={searchFilter ?? ((value, query) => value.toLocaleLowerCase().includes(query.toLocaleLowerCase()))}>
+              <TextField className="select-search" label="Поиск города или региона" placeholder="Город или регион" autoFocus />
+              <Virtualizer layout={ListLayout} layoutOptions={{ estimatedRowSize: Number.parseFloat(tokenValues['controlHeight.md']) }} shouldObserveItemSize>
+                <RACListBox autoFocus={false} className={clsx(css.listBox, css.listBoxMultiple, css.searchListBox)} items={items} renderEmptyState={() => 'Ничего не найдено'}>{children}</RACListBox>
+              </Virtualizer>
+            </Autocomplete> : <RACListBox
               className={clsx(css.listBox, isMultiple && css.listBoxMultiple)}
               items={items}
             >
               {children}
-            </RACListBox>
-            {isMultiple && <MultiFooter />}
+            </RACListBox>}
           </RACPopover>
         </SelectedCheckContext.Provider>
       )}

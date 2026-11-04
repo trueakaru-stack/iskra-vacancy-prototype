@@ -3,7 +3,7 @@
   "version": "0.4.2",
   "private": true,
   "type": "module",
-  "description": "Используемые прототипом компоненты NeoBook и их зависимости.",
+  "description": "Компоненты интерфейса создания вакансии.",
   "sideEffects": [
     "*.css"
   ],

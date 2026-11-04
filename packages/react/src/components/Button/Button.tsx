@@ -11,7 +11,7 @@ import clsx from 'clsx';
 import { useMessages } from '@neobook/i18n';
 import * as css from './Button.css.js';
 
-export type ButtonVariant = 'primary' | 'accent' | 'secondary' | 'ghost' | 'danger' | 'link';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg';
 export type ButtonTextSize = 10 | 12 | 14 | 16;
 export type ButtonTextWeight = 'regular' | 'medium';
@@ -20,7 +20,7 @@ export type ButtonGap = 4 | 6 | 8;
 interface ButtonOwnProps {
   /**
    * Визуальная иерархия. На одной поверхности — не больше одной кнопки
-   * `primary` или `accent`.
+   * `primary`.
    *
    * @default 'secondary'
    */

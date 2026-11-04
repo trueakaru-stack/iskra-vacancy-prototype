@@ -36,9 +36,9 @@ describe('прогресс вопросов', () => {
 
 describe('структурирование голосовых сведений', () => {
   it('принимает только сведения нужного этапа', () => {
-    expect(readFieldPatch({ title: ' Дизайнер ', region: 'Москва', experience: 'От трёх лет' }, 'main')).toEqual({ title: 'Дизайнер', region: 'Москва', experience: 'От трёх лет' });
-    expect(readFieldPatch({ title: 'Дизайнер', region: '' }, 'main')).toBeNull();
-    expect(readFieldPatch({ title: 'Дизайнер', region: '', experience: '', salaryFrom: '120000' }, 'main')).toBeNull();
+    expect(readFieldPatch({ title: ' Дизайнер ', region: ['Москва'], experience: 'От трёх лет' }, 'main')).toEqual({ title: 'Дизайнер', region: ['Москва'], experience: 'От 3 лет' });
+    expect(readFieldPatch({ title: 'Дизайнер', region: [] }, 'main')).toBeNull();
+    expect(readFieldPatch({ title: 'Дизайнер', region: [], experience: '', salaryFrom: '120000' }, 'main')).toBeNull();
   });
 
   it('отклоняет неверную зарплату и типы списков', () => {
@@ -61,8 +61,8 @@ describe('структурирование голосовых сведений',
 
 describe('список вакансий', () => {
   const vacancies: VacancyRow[] = [
-    { id: 'a', title: 'Дизайнер интерфейсов', region: 'Москва', responses: 5, processed: 20, expires: null },
-    { id: 'b', title: 'Аналитик данных', region: 'Казань', responses: null, processed: null, expires: null },
+    { id: 'a', title: 'Дизайнер интерфейсов', region: ['Москва'], responses: 5, processed: 20, expires: null },
+    { id: 'b', title: 'Аналитик данных', region: ['Казань'], responses: null, processed: null, expires: null },
   ];
 
   it('совмещает поиск без учёта регистра и фильтр региона', () => {
@@ -74,9 +74,9 @@ describe('список вакансий', () => {
   it('не придумывает показатели для новой вакансии', () => {
     const draft = createEmptyDraft();
     draft.title = '  Аналитик  ';
-    draft.region = ' Москва ';
+    draft.region = [' Москва '];
     expect(toVacancyRow(draft, 'new')).toEqual({
-      id: 'new', title: 'Аналитик', region: 'Москва', responses: null, processed: null, expires: null,
+      id: 'new', title: 'Аналитик', region: ['Москва'], responses: null, processed: null, expires: null,
     });
   });
 });

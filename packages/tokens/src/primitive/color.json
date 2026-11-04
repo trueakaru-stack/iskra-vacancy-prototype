@@ -1,156 +1,61 @@
 {
-  "$description": "Уровень 1 — примитивы. Сырая палитра. Не меняется темой, не используется в компонентах напрямую: компоненты обращаются только к семантическому уровню.",
   "color": {
     "primary": {
-      "50":  { "$value": "#f4f1ff", "$type": "color" },
-      "100": { "$value": "#e9e2ff", "$type": "color" },
-      "200": { "$value": "#d4c5ff", "$type": "color" },
-      "300": { "$value": "#b69cff", "$type": "color" },
-      "400": { "$value": "#9670ff", "$type": "color" },
-      "500": { "$value": "#7847f5", "$type": "color", "$description": "Ядро бренда" },
-      "600": { "$value": "#6028d9", "$type": "color" },
-      "700": { "$value": "#4a1eb0", "$type": "color" },
-      "800": { "$value": "#381a82", "$type": "color" },
-      "900": { "$value": "#261058", "$type": "color" },
-      "950": { "$value": "#170734", "$type": "color" }
-    },
-    "accent": {
-      "$description": "Тёплый коралл. Только для UI-акцентов — никогда внутри графиков.",
-      "50":  { "$value": "#fff3ec", "$type": "color" },
-      "100": { "$value": "#ffe1d1", "$type": "color" },
-      "200": { "$value": "#ffc09c", "$type": "color" },
-      "300": { "$value": "#ff9a63", "$type": "color" },
-      "400": { "$value": "#fc7a3a", "$type": "color" },
-      "500": { "$value": "#ef5c1e", "$type": "color" },
-      "600": { "$value": "#cc4410", "$type": "color" },
-      "700": { "$value": "#a3340e", "$type": "color" },
-      "800": { "$value": "#7a2710", "$type": "color" },
-      "900": { "$value": "#4f1a0c", "$type": "color" }
-    },
-    "neutral": {
-      "0":    { "$value": "#ffffff", "$type": "color" },
-      "25":   { "$value": "#fbfbfd", "$type": "color" },
-      "50":   { "$value": "#f6f6fa", "$type": "color" },
-      "100":  { "$value": "#eeeef4", "$type": "color" },
-      "150":  { "$value": "#e3e3ed", "$type": "color" },
-      "200":  { "$value": "#d6d6e2", "$type": "color" },
-      "300":  { "$value": "#b6b6c6", "$type": "color" },
-      "400":  { "$value": "#8e8ea3", "$type": "color" },
-      "500":  { "$value": "#6a6a82", "$type": "color" },
-      "600":  { "$value": "#4d4d64", "$type": "color" },
-      "700":  { "$value": "#36364a", "$type": "color" },
-      "800":  { "$value": "#232333", "$type": "color" },
-      "850":  { "$value": "#1a1a28", "$type": "color" },
-      "900":  { "$value": "#131320", "$type": "color" },
-      "950":  { "$value": "#0b0b15", "$type": "color" },
-      "1000": { "$value": "#06060d", "$type": "color" }
-    },
-    "positive": {
-      "$description": "«Хорошо». В финансовом контексте направление роста — см. семантику direction.",
-      "100": { "$value": "#d4f3e3", "$type": "color" },
-      "400": { "$value": "#2dc187", "$type": "color" },
-      "500": { "$value": "#1ea672", "$type": "color" }
-    },
-    "negative": {
-      "100": { "$value": "#fcdce1", "$type": "color" },
-      "400": { "$value": "#ef4561", "$type": "color" },
-      "500": { "$value": "#d9304a", "$type": "color" }
-    },
-    "warning": {
-      "100": { "$value": "#faecc8", "$type": "color" },
-      "500": { "$value": "#d49018", "$type": "color" }
-    },
-    "info": {
-      "100": { "$value": "#d4e4fa", "$type": "color" },
-      "500": { "$value": "#2370d9", "$type": "color" }
-    },
-    "chart": {
-      "$description": "Категориальная палитра, устойчивая к дальтонизму. Намеренно не содержит оранжевого/коралла, чтобы не конфликтовать с акцентом интерфейса.",
-      "1": { "$value": "#7847f5", "$type": "color", "$description": "violet — основная серия" },
-      "2": { "$value": "#2dc1a5", "$type": "color", "$description": "teal" },
-      "3": { "$value": "#2370d9", "$type": "color", "$description": "blue" },
-      "4": { "$value": "#d49018", "$type": "color", "$description": "amber" },
-      "5": { "$value": "#c2469e", "$type": "color", "$description": "magenta" },
-      "6": { "$value": "#4ab842", "$type": "color", "$description": "green" },
-      "7": { "$value": "#e64a4a", "$type": "color", "$description": "red" },
-      "8": { "$value": "#00a3c4", "$type": "color", "$description": "cyan" }
-    },
-    "chartSequential": {
-      "$description": "Последовательные шкалы: одномерная величина — тепловая карта, плотность, удержание когорт. Девять ступеней от светлой к тёмной, порядок несёт смысл и не перемешивается. Из витрины, раздел «Charts · 04 / Chart Palette», блок «Sequential · ordered magnitude»; там же правило выбора семейства: violet — «наша» метрика, teal — нейтральная. Категориальная палитра (chart.1 … chart.8) на тепловую карту не идёт: она про различимость, а не про порядок.",
-      "violet": {
-        "$description": "Violet — основное семейство: тот же тон, что у chart.1.",
-        "1": { "$value": "#f4f1ff", "$type": "color" },
-        "2": { "$value": "#e9e2ff", "$type": "color" },
-        "3": { "$value": "#d4c5ff", "$type": "color" },
-        "4": { "$value": "#b69cff", "$type": "color" },
-        "5": { "$value": "#9670ff", "$type": "color" },
-        "6": { "$value": "#7847f5", "$type": "color" },
-        "7": { "$value": "#6028d9", "$type": "color" },
-        "8": { "$value": "#4a1eb0", "$type": "color" },
-        "9": { "$value": "#261058", "$type": "color" }
-      },
-      "teal": {
-        "$description": "Teal — нейтральное семейство: величина без оценки «хорошо / плохо».",
-        "1": { "$value": "#e5f7f3", "$type": "color" },
-        "2": { "$value": "#c2eee3", "$type": "color" },
-        "3": { "$value": "#94e0cd", "$type": "color" },
-        "4": { "$value": "#5fcfb3", "$type": "color" },
-        "5": { "$value": "#2dc1a5", "$type": "color" },
-        "6": { "$value": "#1aa68a", "$type": "color" },
-        "7": { "$value": "#0e8470", "$type": "color" },
-        "8": { "$value": "#085c50", "$type": "color" },
-        "9": { "$value": "#053731", "$type": "color" }
-      },
-      "blue": {
-        "$description": "Blue — третье семейство, когда violet и teal уже заняты соседними графиками.",
-        "1": { "$value": "#ebf2fc", "$type": "color" },
-        "2": { "$value": "#cfdef7", "$type": "color" },
-        "3": { "$value": "#a8c4ed", "$type": "color" },
-        "4": { "$value": "#6f9ee0", "$type": "color" },
-        "5": { "$value": "#2370d9", "$type": "color" },
-        "6": { "$value": "#1957b3", "$type": "color" },
-        "7": { "$value": "#10408a", "$type": "color" },
-        "8": { "$value": "#0a2c61", "$type": "color" },
-        "9": { "$value": "#061a3a", "$type": "color" }
+      "50": {
+        "$value": "#f4f1ff",
+        "$type": "color"
       }
     },
-    "chartDiverging": {
-      "$description": "Расходящиеся шкалы: величина с осмысленным центром — корреляция, отклонение от базы, P&L. Девять ступеней, пятая — нейтральная середина (#eeeef4 у всех трёх семейств), края расходятся в противоположные тона. Из витрины, раздел «Charts · 04 / Chart Palette», блок «Diverging · centered scales».",
-      "redGreen": {
-        "$description": "Red ⇿ Green. Витрина предписывает ей уважать переключатель конвенции направления, но сами ступени под ним не меняются — вопрос дизайнерам записан в DESIGN.md.",
-        "1": { "$value": "#9f1c34", "$type": "color" },
-        "2": { "$value": "#c43a52", "$type": "color" },
-        "3": { "$value": "#de8190", "$type": "color" },
-        "4": { "$value": "#f0c5cc", "$type": "color" },
-        "5": { "$value": "#eeeef4", "$type": "color" },
-        "6": { "$value": "#b8e2cf", "$type": "color" },
-        "7": { "$value": "#74c89e", "$type": "color" },
-        "8": { "$value": "#2da06d", "$type": "color" },
-        "9": { "$value": "#0e6c44", "$type": "color" }
+    "accent": {
+      "500": {
+        "$value": "#ef5c1e",
+        "$type": "color"
+      }
+    },
+    "neutral": {
+      "0": {
+        "$value": "#ffffff",
+        "$type": "color"
       },
-      "violetTeal": {
-        "$description": "Violet ⇿ Teal — расхождение без оценочной окраски.",
-        "1": { "$value": "#4a1eb0", "$type": "color" },
-        "2": { "$value": "#6028d9", "$type": "color" },
-        "3": { "$value": "#9670ff", "$type": "color" },
-        "4": { "$value": "#d4c5ff", "$type": "color" },
-        "5": { "$value": "#eeeef4", "$type": "color" },
-        "6": { "$value": "#94e0cd", "$type": "color" },
-        "7": { "$value": "#2dc1a5", "$type": "color" },
-        "8": { "$value": "#1aa68a", "$type": "color" },
-        "9": { "$value": "#085c50", "$type": "color" }
+      "150": {
+        "$value": "#e3e3ed",
+        "$type": "color"
       },
-      "blueOrange": {
-        "$description": "Blue ⇿ Orange (CBS) — устойчива к дальтонизму. Витрина называет её рекомендованной шкалой для риска и P&L в общих дашбордах.",
-        "1": { "$value": "#10408a", "$type": "color" },
-        "2": { "$value": "#2370d9", "$type": "color" },
-        "3": { "$value": "#6f9ee0", "$type": "color" },
-        "4": { "$value": "#cfdef7", "$type": "color" },
-        "5": { "$value": "#eeeef4", "$type": "color" },
-        "6": { "$value": "#ffd2a8", "$type": "color" },
-        "7": { "$value": "#fc7a3a", "$type": "color" },
-        "8": { "$value": "#cc4410", "$type": "color" },
-        "9": { "$value": "#7a2710", "$type": "color" }
+      "200": {
+        "$value": "#d6d6e2",
+        "$type": "color"
+      },
+      "400": {
+        "$value": "#8e8ea3",
+        "$type": "color"
+      },
+      "900": {
+        "$value": "#131320",
+        "$type": "color"
+      }
+    },
+    "positive": {
+      "500": {
+        "$value": "#1ea672",
+        "$type": "color"
+      }
+    },
+    "negative": {
+      "500": {
+        "$value": "#d9304a",
+        "$type": "color"
+      }
+    },
+    "warning": {
+      "500": {
+        "$value": "#d49018",
+        "$type": "color"
+      }
+    },
+    "info": {
+      "500": {
+        "$value": "#2370d9",
+        "$type": "color"
       }
     }
   }

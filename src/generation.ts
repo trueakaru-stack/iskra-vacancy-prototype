@@ -21,7 +21,7 @@ async function ask(path: string, body: unknown): Promise<Record<string, unknown>
 }
 
 export async function structureAnswer(stage: IntakeStage, text: string): Promise<Partial<VacancyFields>> {
-  const data = await ask('/structure', { stage, text });
+  const data = await ask('/structure', { stage, text, multipleRegions: true });
   const fields = readFieldPatch(data.fields, stage);
   if (!fields) throw new Error('Не удалось выделить сведения. Уточните ответ и попробуйте ещё раз.');
   return fields;
@@ -29,7 +29,7 @@ export async function structureAnswer(stage: IntakeStage, text: string): Promise
 
 export async function reviseVacancy(instruction: string, draft: VacancyDraft, sections: VacancySections): Promise<VacancyRevision> {
   const { answers: _answers, ...fields } = draft;
-  const data = await ask('/revise', { instruction, draft: fields, sections });
+  const data = await ask('/revise', { instruction, draft: fields, sections, multipleRegions: true });
   const revision = readRevision(data);
   if (!revision) throw new Error('Не удалось подготовить изменения. Уточните, что нужно исправить.');
   return revision;

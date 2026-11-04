@@ -1,7 +1,7 @@
 {
   "name": "@neobook/tokens",
   "version": "0.4.2",
-  "description": "Дизайн-токены NeoBook — публичный контракт темизации.",
+  "description": "Токены компонентов интерфейса создания вакансии.",
   "type": "module",
   "sideEffects": [
     "*.css"
@@ -22,7 +22,6 @@
       "types": "./dist/contract.css.d.ts",
       "default": "./dist/contract.css.js"
     },
-    "./tokens.json": "./generated/tokens.json",
     "./source": "./src"
   },
   "scripts": {

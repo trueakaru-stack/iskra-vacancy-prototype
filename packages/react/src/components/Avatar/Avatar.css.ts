@@ -64,7 +64,7 @@ export const size = styleVariants({
 
 /** .avatar--square — воркспейсы и проекты; круг остаётся людям. */
 export const square = style({
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
 });
 
 // .avatar > img — картинка заполняет весь аватар и наследует скругление.

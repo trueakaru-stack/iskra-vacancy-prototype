@@ -154,13 +154,13 @@ export const customHeight = style({
 
 /** Скругление коробки: ступени шкалы `radius`, умолчание — `lg`. */
 export const radius = styleVariants({
-  none: { borderRadius: vars.radius.none },
-  xs: { borderRadius: vars.radius.xs },
-  sm: { borderRadius: vars.radius.sm },
-  md: { borderRadius: vars.radius.md },
+  none: { borderRadius: '0px' },
+  xs: { borderRadius: vars.radius.lg },
+  sm: { borderRadius: vars.radius.lg },
+  md: { borderRadius: vars.radius.lg },
   lg: { borderRadius: vars.radius.lg },
-  xl: { borderRadius: vars.radius.xl },
-  '2xl': { borderRadius: vars.radius['2xl'] },
+  xl: { borderRadius: vars.radius.lg },
+  '2xl': { borderRadius: vars.radius.lg },
 });
 
 /** `.modal:focus-visible, .modal:focus` — outline: none. Элемент Dialog

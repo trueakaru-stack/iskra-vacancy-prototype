@@ -66,7 +66,7 @@ export const textarea = style({
   paddingInline: vars.fieldPaddingInline.md,
   background: vars.bg.surface,
   border: `1px solid ${vars.border.default}`,
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
 
   // font: var(--fw-regular) var(--fs-13)/var(--lh-normal) var(--font-sans)
   fontFamily: vars.fontFamily.sans,

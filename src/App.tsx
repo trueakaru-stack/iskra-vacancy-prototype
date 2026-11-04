@@ -48,7 +48,7 @@ function orderedVacancies(rows: VacancyRow[], sort: Sort): VacancyRow[] {
 function detailsOf(draft: VacancyDraft, includeTitle = true): Array<[string, string]> {
   const salary = [draft.salaryFrom && 'от ' + draft.salaryFrom, draft.salaryTo && 'до ' + draft.salaryTo].filter(Boolean).join(' ');
   const details: Array<[string, string]> = [
-    ['Название', includeTitle ? draft.title : ''], ['Регион', draft.region], ['Опыт работы', draft.experience],
+    ['Название', includeTitle ? draft.title : ''], ['Регион', draft.region.join(', ')], ['Опыт работы', draft.experience],
     ['Зарплата', salary], ['Занятость', draft.employment.join(', ')], ['Формат работы', draft.workFormat.join(', ')],
     ['График', draft.schedule.join(', ')], ['Оформление', draft.contract.join(', ')],
   ];
@@ -95,11 +95,11 @@ export function App() {
   };
   const speech = useSpeech(addTranscript);
   const busy = speech.busy || operation !== null;
-  const regions = useMemo(() => [...new Set(vacancies.map((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru')), [vacancies]);
+  const regions = useMemo(() => [...new Set(vacancies.flatMap((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru')), [vacancies]);
   const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort), [vacancies, query, region, sort]);
   const selectedRow = vacancies.find((row) => row.id === selectedId);
   const saved = selectedId ? savedDrafts[selectedId] : undefined;
-  const visibleDraft = manualEdit?.draft ?? (saved ? { ...saved.draft, ...revision?.fields } : { ...createEmptyDraft(), title: selectedRow?.title ?? '', region: selectedRow?.region ?? '' });
+  const visibleDraft = manualEdit?.draft ?? (saved ? { ...saved.draft, ...revision?.fields } : { ...createEmptyDraft(), title: selectedRow?.title ?? '', region: selectedRow?.region ?? [] });
   const visibleSections = manualEdit?.sections ?? (saved ? { ...saved.sections, ...revision?.sections } : null);
   const currentAnswer = phase === 'main' || phase === 'conditions' ? intake[phase] : draft.answers[QUESTIONS[question].id];
   const operationLabel = operation === 'generate' ? 'Создаём описание' : operation === 'revise' ? 'Готовим изменения' : 'Обрабатываем ответ';
@@ -190,7 +190,7 @@ export function App() {
   const saveChanges = (updated: SavedVacancy) => {
     if (!selectedId || draftError(updated.draft)) return;
     setSavedDrafts((current) => ({ ...current, [selectedId]: updated }));
-    setVacancies((current) => current.map((row) => row.id === selectedId ? { ...row, title: updated.draft.title.trim(), region: updated.draft.region.trim() } : row));
+    setVacancies((current) => current.map((row) => row.id === selectedId ? { ...row, title: updated.draft.title.trim(), region: updated.draft.region.map((value) => value.trim()) } : row));
     setManualEdit(null); setEditing(false); setRevision(null); setEditText(''); setError(''); speech.reset();
   };
   const submitEdit = async () => {
@@ -272,7 +272,7 @@ export function App() {
             <DataTableColumn id="expires" allowsSorting width="25%">Истекает</DataTableColumn>
           </DataTableHeader>
           <DataTableBody items={filtered} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => <DataTableRow id={item.id} onAction={() => { setSelectedId(item.id); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); }}>
-            <DataTableCell>{item.title}</DataTableCell><DataTableCell>{item.region || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
+            <DataTableCell>{item.title}</DataTableCell><DataTableCell>{item.region.join(', ') || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
           </DataTableRow>}</DataTableBody>
         </DataTable>
       </>}

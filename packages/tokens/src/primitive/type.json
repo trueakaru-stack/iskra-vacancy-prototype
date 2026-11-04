@@ -1,5 +1,4 @@
 {
-  "$description": "Типографика. Базовый размер 13px — плотный интерфейс для data-driven экранов.",
   "fontFamily": {
     "sans": {
       "$value": "\"IBM Plex Sans\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", system-ui, sans-serif",
@@ -12,85 +11,75 @@
     }
   },
   "fontSize": {
-    "10": { "$value": "10px", "$type": "dimension" },
-    "11": { "$value": "11px", "$type": "dimension" },
-    "12": { "$value": "12px", "$type": "dimension" },
-    "13": { "$value": "13px", "$type": "dimension", "$description": "Базовый размер интерфейса" },
-    "14": { "$value": "14px", "$type": "dimension", "$description": "Базовый размер документации" },
-    "15": { "$value": "15px", "$type": "dimension" },
-    "16": { "$value": "16px", "$type": "dimension" },
-    "18": { "$value": "18px", "$type": "dimension" },
-    "20": { "$value": "20px", "$type": "dimension" },
-    "24": { "$value": "24px", "$type": "dimension" },
-    "28": { "$value": "28px", "$type": "dimension" },
-    "32": { "$value": "32px", "$type": "dimension" },
-    "40": { "$value": "40px", "$type": "dimension" },
-    "48": { "$value": "48px", "$type": "dimension" },
-    "64": { "$value": "64px", "$type": "dimension" }
+    "10": {
+      "$value": "10px",
+      "$type": "dimension"
+    },
+    "11": {
+      "$value": "11px",
+      "$type": "dimension"
+    },
+    "12": {
+      "$value": "12px",
+      "$type": "dimension"
+    },
+    "13": {
+      "$value": "13px",
+      "$type": "dimension",
+      "$description": "Базовый размер интерфейса"
+    },
+    "14": {
+      "$value": "14px",
+      "$type": "dimension",
+      "$description": "Базовый размер документации"
+    },
+    "15": {
+      "$value": "15px",
+      "$type": "dimension"
+    },
+    "16": {
+      "$value": "16px",
+      "$type": "dimension"
+    },
+    "20": {
+      "$value": "20px",
+      "$type": "dimension"
+    },
+    "24": {
+      "$value": "24px",
+      "$type": "dimension"
+    },
+    "32": {
+      "$value": "32px",
+      "$type": "dimension"
+    }
   },
   "lineHeight": {
-    "tight":   { "$value": "1.15", "$type": "number" },
-    "snug":    { "$value": "1.3",  "$type": "number" },
-    "normal":  { "$value": "1.45", "$type": "number" },
-    "relaxed": { "$value": "1.6",  "$type": "number" }
-  },
-  "typography": {
-    "$description": "Ступени типографической шкалы витрины (раздел «Foundations · F.07 / Typography», таблица «Type scale»). Каждой ступени там сопоставлены кегль, межстрочный и трекинг — например «32 / 1.15» и «-2.2%». Кегль уже лежит в fontSize, поэтому здесь только межстрочный и трекинг: без них ступень задана наполовину, и заголовок в 64px набирается с межстрочным 1.45 от body. Именами ступеней служат роли из той же таблицы (Display, Page hero, Page title (H1)…), а не числа: роль переживает смену кегля, число — нет. Ступени 18, 28 и 40 ролей не имеют и сюда не попадают. Где межстрочный совпадает с именованным — стоит ссылка на lineHeight.*, чтобы правка примитива доходила до ступени. Трекинг задан в em, как в самой витрине: проценты таблицы и em инлайновых стилей там численно совпадают (-2.5% → -0.025em), потому что em и есть доля кегля. ВНИМАНИЕ: колонка трекинга в витрине размечена для всех одиннадцати ступеней, но применена инлайном только к трём (64, 48 и 10); остальным восьми трекинг приходит от демонстрационных классов сетки образцов (.type-spec .sample — -0.01em, .tight — -0.022em), то есть от оформления самой витрины, а не от ступени. Взята размеченная колонка: числа в ней проставлены по ступеням осознанно, а .sample/.tight обслуживают вёрстку страницы-образца. Расхождение описано в DESIGN.md.",
-    "display": {
-      "lineHeight": { "$value": "1.05", "$type": "number" },
-      "letterSpacing": { "$value": "-0.025em", "$type": "dimension" }
+    "snug": {
+      "$value": "1.3",
+      "$type": "number"
     },
-    "hero": {
-      "lineHeight": { "$value": "1.1", "$type": "number" },
-      "letterSpacing": { "$value": "-0.022em", "$type": "dimension" }
+    "normal": {
+      "$value": "1.45",
+      "$type": "number"
     },
-    "h1": {
-      "lineHeight": { "$value": "{lineHeight.tight}", "$type": "number" },
-      "letterSpacing": { "$value": "-0.022em", "$type": "dimension" }
-    },
-    "h2": {
-      "lineHeight": { "$value": "1.2", "$type": "number" },
-      "letterSpacing": { "$value": "-0.015em", "$type": "dimension" }
-    },
-    "h3": {
-      "lineHeight": { "$value": "1.25", "$type": "number" },
-      "letterSpacing": { "$value": "-0.012em", "$type": "dimension" }
-    },
-    "bodyLarge": {
-      "lineHeight": { "$value": "{lineHeight.normal}", "$type": "number" },
-      "letterSpacing": { "$value": "-0.005em", "$type": "dimension" }
-    },
-    "lead": {
-      "$description": "Лид страницы, 15px. Ступени нет в таблице «Type scale» — она приходит из панели «Usage hierarchy» и из таблицы «Token reference» (--fs-15 · Page leads). Межстрочный там 1.6, трекинг не задан.",
-      "lineHeight": { "$value": "{lineHeight.relaxed}", "$type": "number" },
-      "letterSpacing": { "$value": "0", "$type": "dimension" }
-    },
-    "body": {
-      "lineHeight": { "$value": "{lineHeight.normal}", "$type": "number" },
-      "letterSpacing": { "$value": "0", "$type": "dimension" }
-    },
-    "bodyDense": {
-      "lineHeight": { "$value": "{lineHeight.normal}", "$type": "number" },
-      "letterSpacing": { "$value": "0", "$type": "dimension" }
-    },
-    "label": {
-      "lineHeight": { "$value": "1.35", "$type": "number" },
-      "letterSpacing": { "$value": "0.01em", "$type": "dimension" }
-    },
-    "caption": {
-      "lineHeight": { "$value": "{lineHeight.snug}", "$type": "number" },
-      "letterSpacing": { "$value": "0.04em", "$type": "dimension" }
-    },
-    "eyebrow": {
-      "$description": "Надзаголовок: моноширинный, прописными. Витрина задаёт эту ступень дважды и по-разному — строка таблицы «Type scale» даёт 10px и 0.06em, а собственный класс страницы .page-header__eyebrow даёт 11px, 0.08em, вес medium и цвет accent. Взята строка таблицы: она описывает ступень шкалы, класс — оформление шапки витрины. Расхождение описано в DESIGN.md.",
-      "lineHeight": { "$value": "{lineHeight.snug}", "$type": "number" },
-      "letterSpacing": { "$value": "0.06em", "$type": "dimension" }
+    "relaxed": {
+      "$value": "1.6",
+      "$type": "number"
     }
   },
   "fontWeight": {
-    "regular":  { "$value": "400", "$type": "fontWeight" },
-    "medium":   { "$value": "500", "$type": "fontWeight" },
-    "semibold": { "$value": "600", "$type": "fontWeight" },
-    "bold":     { "$value": "700", "$type": "fontWeight" }
+    "regular": {
+      "$value": "400",
+      "$type": "fontWeight"
+    },
+    "medium": {
+      "$value": "500",
+      "$type": "fontWeight"
+    },
+    "semibold": {
+      "$value": "600",
+      "$type": "fontWeight"
+    }
   }
 }

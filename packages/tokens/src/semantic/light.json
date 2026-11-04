@@ -1,103 +1,168 @@
 {
-  "$description": "Уровень 2 — семантика, светлая тема. ТОЛЬКО этот уровень используется в компонентах и ТОЛЬКО он меняется темой. Каждый токен ссылается на примитив, а не хранит своё значение.",
   "bg": {
-    "canvas":  { "$value": "{color.neutral.25}",  "$type": "color", "$description": "Фон страницы" },
-    "surface": { "$value": "{color.neutral.0}",   "$type": "color", "$description": "Карточки, панели, поповеры" },
-    "subtle":  { "$value": "{color.neutral.50}",  "$type": "color" },
-    "muted":   { "$value": "{color.neutral.100}", "$type": "color" },
-    "hover":   { "$value": "{color.neutral.100}", "$type": "color" },
-    "active":  { "$value": "{color.neutral.150}", "$type": "color" },
-    "inverse": { "$value": "{color.neutral.900}", "$type": "color" }
+    "surface": {
+      "$value": "oklch(100% 0 0)",
+      "$type": "color",
+      "$description": "Карточки, панели, поповеры"
+    },
+    "subtle": {
+      "$value": "oklch(97% 0 0)",
+      "$type": "color"
+    },
+    "muted": {
+      "$value": "oklch(97% 0 0)",
+      "$type": "color"
+    },
+    "hover": {
+      "$value": "oklch(97% 0 0)",
+      "$type": "color"
+    },
+    "active": {
+      "$value": "{color.neutral.150}",
+      "$type": "color"
+    },
+    "inverse": {
+      "$value": "{color.neutral.900}",
+      "$type": "color"
+    }
   },
   "border": {
-    "subtle":  { "$value": "{color.neutral.100}", "$type": "color" },
-    "default": { "$value": "{color.neutral.200}", "$type": "color" },
-    "strong":  { "$value": "{color.neutral.300}", "$type": "color" },
-    "focus":   { "$value": "{color.primary.500}", "$type": "color" }
+    "subtle": {
+      "$value": "#d6d6e2",
+      "$type": "color"
+    },
+    "default": {
+      "$value": "#d6d6e2",
+      "$type": "color"
+    },
+    "strong": {
+      "$value": "#b6b6c6",
+      "$type": "color"
+    },
+    "focus": {
+      "$value": "oklch(70.8% 0 0)",
+      "$type": "color"
+    }
   },
   "fg": {
-    "default":   { "$value": "{color.neutral.900}", "$type": "color" },
-    "secondary": { "$value": "{color.neutral.600}", "$type": "color" },
-    "muted":     { "$value": "{color.neutral.500}", "$type": "color" },
-    "disabled":  { "$value": "{color.neutral.400}", "$type": "color" },
-    "inverse":   { "$value": "{color.neutral.0}",   "$type": "color" },
-    "onPrimary": { "$value": "#ffffff", "$type": "color", "$description": "Текст поверх action.primary.bg — не меняется темой" },
-    "onAccent":  { "$value": "#ffffff", "$type": "color" },
-    "onDanger":  { "$value": "#ffffff", "$type": "color" }
+    "default": {
+      "$value": "oklch(14.5% 0 0)",
+      "$type": "color"
+    },
+    "secondary": {
+      "$value": "oklch(45% 0 0)",
+      "$type": "color"
+    },
+    "muted": {
+      "$value": "oklch(55.6% 0 0)",
+      "$type": "color"
+    },
+    "disabled": {
+      "$value": "{color.neutral.400}",
+      "$type": "color"
+    },
+    "inverse": {
+      "$value": "{color.neutral.0}",
+      "$type": "color"
+    },
+    "onPrimary": {
+      "$value": "oklch(98.5% 0 0)",
+      "$type": "color",
+      "$description": "Текст поверх action.primary.bg — не меняется темой"
+    },
+    "onDanger": {
+      "$value": "#ffffff",
+      "$type": "color"
+    }
   },
   "action": {
     "primary": {
-      "$description": "fgActive в макетах не описан: у .btn--link состояния нажатия нет вовсе. Добавлен как продолжение той же шкалы — fg взят на 700, нажатие на шаг дальше, на 800.",
-      "bg":       { "$value": "{color.primary.500}", "$type": "color" },
-      "bgHover":  { "$value": "{color.primary.600}", "$type": "color" },
-      "bgActive": { "$value": "{color.primary.700}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.primary.50}",  "$type": "color" },
-      "fg":       { "$value": "{color.primary.700}", "$type": "color" },
-      "fgActive": { "$value": "{color.primary.800}", "$type": "color" },
-      "border":   { "$value": "{color.primary.200}", "$type": "color" }
+      "bg": {
+        "$value": "oklch(20.5% 0 0)",
+        "$type": "color"
+      },
+      "bgHover": {
+        "$value": "oklch(36% 0 0)",
+        "$type": "color"
+      },
+      "bgActive": {
+        "$value": "oklch(14.5% 0 0)",
+        "$type": "color"
+      },
+      "bgSubtle": {
+        "$value": "{color.primary.50}",
+        "$type": "color"
+      },
+      "fg": {
+        "$value": "oklch(20.5% 0 0)",
+        "$type": "color"
+      }
     },
     "accent": {
-      "bg":       { "$value": "{color.accent.500}", "$type": "color" },
-      "bgHover":  { "$value": "{color.accent.600}", "$type": "color" },
-      "bgActive": { "$value": "{color.accent.700}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.accent.50}",  "$type": "color" },
-      "fg":       { "$value": "{color.accent.600}", "$type": "color" },
-      "border":   { "$value": "{color.accent.200}", "$type": "color" }
+      "bg": {
+        "$value": "{color.accent.500}",
+        "$type": "color"
+      }
     },
     "danger": {
-      "$description": "Значения из reference: .btn--danger — заливка neg-500, при наведении color-mix с чёрным на 88%. Состояние нажатия в макетах не описано; bgActive добавлен как продолжение той же формулы.",
-      "bg":       { "$value": "{color.negative.500}", "$type": "color" },
-      "bgHover":  { "$value": "color-mix(in srgb, {color.negative.500} 88%, black)", "$type": "color" },
-      "bgActive": { "$value": "color-mix(in srgb, {color.negative.500} 78%, black)", "$type": "color" },
-      "bgSubtle": { "$value": "{color.negative.100}", "$type": "color" },
-      "fg":       { "$value": "{color.negative.500}", "$type": "color" },
-      "border":   { "$value": "{color.negative.500}", "$type": "color" }
+      "bg": {
+        "$value": "{color.negative.500}",
+        "$type": "color"
+      }
     }
   },
   "status": {
-    "$description": "Статусы валидации и системных сообщений. НЕ переворачиваются локалью: успех зелёный везде.",
     "positive": {
-      "fg":       { "$value": "{color.positive.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.positive.100}", "$type": "color" }
+      "fg": {
+        "$value": "{color.positive.500}",
+        "$type": "color"
+      }
     },
     "negative": {
-      "fg":       { "$value": "{color.negative.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.negative.100}", "$type": "color" }
+      "fg": {
+        "$value": "{color.negative.500}",
+        "$type": "color"
+      }
     },
     "warning": {
-      "fg":       { "$value": "{color.warning.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.warning.100}", "$type": "color" }
+      "fg": {
+        "$value": "{color.warning.500}",
+        "$type": "color"
+      }
     },
     "info": {
-      "fg":       { "$value": "{color.info.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.info.100}", "$type": "color" }
+      "fg": {
+        "$value": "{color.info.500}",
+        "$type": "color"
+      }
     }
   },
   "trend": {
-    "$description": "Направление финансового движения. ЭТО переворачивается локалью (data-direction=\"ea\"): в Китае/Японии/Корее рост традиционно красный, падение — зелёное. Отделено от status намеренно — success-тост должен оставаться зелёным в любой локали.",
     "up": {
-      "fg":       { "$value": "{color.positive.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.positive.100}", "$type": "color" }
+      "fg": {
+        "$value": "{color.positive.500}",
+        "$type": "color"
+      }
     },
     "down": {
-      "fg":       { "$value": "{color.negative.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.negative.100}", "$type": "color" }
-    },
-    "flat": {
-      "fg":       { "$value": "{color.neutral.500}", "$type": "color" },
-      "bgSubtle": { "$value": "{color.neutral.100}", "$type": "color" }
+      "fg": {
+        "$value": "{color.negative.500}",
+        "$type": "color"
+      }
     }
   },
   "shadow": {
-    "xs": { "$value": "0 1px 2px rgba(16, 16, 35, 0.04)", "$type": "shadow" },
-    "sm": { "$value": "0 1px 2px rgba(16, 16, 35, 0.06), 0 1px 3px rgba(16, 16, 35, 0.04)", "$type": "shadow" },
-    "md": { "$value": "0 2px 4px rgba(16, 16, 35, 0.06), 0 4px 8px rgba(16, 16, 35, 0.06)", "$type": "shadow" },
-    "lg": { "$value": "0 4px 8px rgba(16, 16, 35, 0.08), 0 12px 24px rgba(16, 16, 35, 0.08)", "$type": "shadow" },
-    "xl": { "$value": "0 8px 16px rgba(16, 16, 35, 0.10), 0 24px 48px rgba(16, 16, 35, 0.12)", "$type": "shadow" },
-    "switchKnob": {
-      "$value": "0 1px 2px rgba(0, 0, 0, 0.2)",
-      "$type": "shadow",
-      "$description": "Тень кружка тумблера. Значение из reference: .switch::after. Темой не меняется — задано в самом компоненте макетов, а не в их tokens.css, как и белая заливка кружка. На шкалу xs…xl не ложится: у неё в светлой теме основа rgba(16, 16, 35), а здесь чёрный. Вынесено в токен, чтобы в компоненте не оставалось литерала."
+    "md": {
+      "$value": "0 2px 4px rgba(16, 16, 35, 0.06), 0 4px 8px rgba(16, 16, 35, 0.06)",
+      "$type": "shadow"
+    },
+    "lg": {
+      "$value": "0 4px 8px rgba(16, 16, 35, 0.08), 0 12px 24px rgba(16, 16, 35, 0.08)",
+      "$type": "shadow"
+    },
+    "xl": {
+      "$value": "0 8px 16px rgba(16, 16, 35, 0.10), 0 24px 48px rgba(16, 16, 35, 0.12)",
+      "$type": "shadow"
     }
   },
   "focus": {
@@ -113,26 +178,55 @@
     }
   },
   "avatar": {
-    "$description": "Палитра идентичности аватаров. Из reference (Avatar.css, --avatar-c1..c5): пять пар фон/текст, намеренно отдельных от семантики pos/neg/warn/info. Значения захардкожены в макетах, а не взяты со шкал, — переносим как есть. c1 совпадает с primary-600 по букве, но не по смыслу: палитра не обязана следовать за брендом.",
     "c1": {
-      "bg": { "$value": "#efe1ff", "$type": "color" },
-      "fg": { "$value": "#6028d9", "$type": "color" }
+      "bg": {
+        "$value": "#efe1ff",
+        "$type": "color"
+      },
+      "fg": {
+        "$value": "#6028d9",
+        "$type": "color"
+      }
     },
     "c2": {
-      "bg": { "$value": "#d9f5ec", "$type": "color" },
-      "fg": { "$value": "#167a4e", "$type": "color" }
+      "bg": {
+        "$value": "#d9f5ec",
+        "$type": "color"
+      },
+      "fg": {
+        "$value": "#167a4e",
+        "$type": "color"
+      }
     },
     "c3": {
-      "bg": { "$value": "#e0ecff", "$type": "color" },
-      "fg": { "$value": "#1d5fc4", "$type": "color" }
+      "bg": {
+        "$value": "#e0ecff",
+        "$type": "color"
+      },
+      "fg": {
+        "$value": "#1d5fc4",
+        "$type": "color"
+      }
     },
     "c4": {
-      "bg": { "$value": "#fbecc6", "$type": "color" },
-      "fg": { "$value": "#8a5e08", "$type": "color" }
+      "bg": {
+        "$value": "#fbecc6",
+        "$type": "color"
+      },
+      "fg": {
+        "$value": "#8a5e08",
+        "$type": "color"
+      }
     },
     "c5": {
-      "bg": { "$value": "#f8d9ec", "$type": "color" },
-      "fg": { "$value": "#963480", "$type": "color" }
+      "bg": {
+        "$value": "#f8d9ec",
+        "$type": "color"
+      },
+      "fg": {
+        "$value": "#963480",
+        "$type": "color"
+      }
     },
     "statusOffline": {
       "$value": "{color.neutral.400}",
@@ -140,108 +234,17 @@
       "$description": "Точка статуса «не в сети». Из reference (.avatar__status--offline): --neutral-400 в обеих темах. Статусы «в сети» и «занят» берут status.positive.fg и status.warning.fg — у них те же значения, отдельные токены не нужны."
     }
   },
-  "settings": {
-    "$description": "Цвета «опасной зоны» страницы настроек. Из витрины (раздел «Settings»): карточка с необратимыми действиями красится инлайновыми стилями — рамка 30% отрицательного цвета поверх прозрачного, линия под её шапкой 18%. Название шапки берёт готовый action.danger.fg, отдельного токена не требует. В макетах замешивается --neg-500, который переворачивается локалью (data-direction=\"ea\") — здесь взят непереворачиваемый {color.negative.500}, как у Dialog; вопрос записан в DESIGN.md. color-mix статически не считается, в отчёт по контрасту эти пары не попадают.",
-    "dangerBorder": { "$value": "color-mix(in srgb, {color.negative.500} 30%, transparent)", "$type": "color" },
-    "dangerHeadBorder": { "$value": "color-mix(in srgb, {color.negative.500} 18%, transparent)", "$type": "color" }
-  },
   "dialog": {
-    "$description": "Цвета диалога. Из reference (Dialog.css): подложка — 42% fg-default поверх прозрачного; фоны иконки интентов — 12% статусного цвета (14% для warning) поверх живого {bg.surface}. В макетах замешиваются из --neg-500/--pos-500, которые переворачиваются локалью (data-direction=\"ea\") — здесь взяты непереворачиваемые статусные цвета, вопрос записан в DESIGN.md. color-mix статически не считается, в отчёт по контрасту эти пары не попадают. Иконка primary-интента берёт готовые action.primary.bgSubtle/fg, отдельные токены не нужны.",
-    "backdropBg": { "$value": "color-mix(in srgb, {fg.default} 42%, transparent)", "$type": "color" },
-    "icon": {
-      "dangerBg": { "$value": "color-mix(in srgb, {color.negative.500} 12%, {bg.surface})", "$type": "color" },
-      "warningBg": { "$value": "color-mix(in srgb, {color.warning.500} 14%, {bg.surface})", "$type": "color" },
-      "infoBg": { "$value": "color-mix(in srgb, {color.info.500} 12%, {bg.surface})", "$type": "color" },
-      "positiveBg": { "$value": "color-mix(in srgb, {color.positive.500} 12%, {bg.surface})", "$type": "color" }
+    "backdropBg": {
+      "$value": "color-mix(in srgb, {fg.default} 42%, transparent)",
+      "$type": "color"
     }
-  },
-  "tabs": {
-    "$description": "Цвета вкладок. Из reference (.tabs--pill .tabs__item.is-active .badge): фон бейджа внутри активной вкладки-таблетки задан белым с прозрачностью напрямую, а не токеном. Значение переносится как есть; подложка у него — action.primary.bg, поэтому белая полупрозрачность работает в обеих темах одинаково и в тёмной не переопределяется. Цвет текста того же бейджа отдельного токена не требует — это готовый fg.onPrimary (#ffffff в обеих темах).",
-    "pillActiveBadgeBg": { "$value": "rgba(255, 255, 255, 0.22)", "$type": "color" }
-  },
-  "banner": {
-    "$description": "Рамка баннера. Из макетов: 32% статусного цвета поверх прозрачного — подложка при этом остаётся сплошным {status.*.bgSubtle}. Формула одна на обе темы: в макетах тёмная переопределяет только фоны (--info-100 и соседние), сами --info-500 и --pos-500 остаются светлотемными. У нейтрального варианта рамка сплошная и своего токена не требует — это готовый border.default. В макетах positive и negative замешиваются из --pos-500/--neg-500, которые переворачиваются локалью (data-direction=\"ea\"); здесь взяты непереворачиваемые статусные цвета — то же решение, что у Dialog, Checkbox и NumberInput, вопрос записан в DESIGN.md. color-mix статически не считается, в отчёт по контрасту эти пары не попадают.",
-    "border": {
-      "info":     { "$value": "color-mix(in srgb, {color.info.500} 32%, transparent)",     "$type": "color" },
-      "positive": { "$value": "color-mix(in srgb, {color.positive.500} 32%, transparent)", "$type": "color" },
-      "warning":  { "$value": "color-mix(in srgb, {color.warning.500} 32%, transparent)",  "$type": "color" },
-      "negative": { "$value": "color-mix(in srgb, {color.negative.500} 32%, transparent)", "$type": "color" }
-    }
-  },
-  "timeline": {
-    "$description": "Цвета маркера ленты событий. Из макетов (.timeline__marker--pos и соседние): рамка — 35% тона поверх прозрачного, подложка — 12% тона поверх живого {bg.surface}. Формулы одни на обе темы: в макетах тёмная тема переопределяет только сотые ступени (--info-100 и соседние), сами --pos-500 и --info-500 остаются светлотемными, а {bg.surface} разрешается в тёмный сам. Доля рамки здесь 35%, а не 32% как у Banner, и доля подложки 12% совпадает с dialog.icon.*Bg у трёх интентов из четырёх — у warning в диалоге 14%. Общих токенов поэтому нет: доли заданы дизайнерами покомпонентно и меняются независимо. У нейтрального маркера рамка и фон сплошные, своих токенов не требуют — это готовые border.default и bg.subtle; у primary подложка — action.primary.bgSubtle, а цвет глифа — action.primary.fg, обе уже переопределены под тёмную тему. В макетах positive и negative замешиваются из --pos-500/--neg-500, которые переворачиваются локалью (data-direction=\"ea\"); здесь взяты непереворачиваемые статусные цвета — то же решение, что у Banner, Dialog, Checkbox и NumberInput, вопрос записан в DESIGN.md. color-mix статически не считается, в отчёт по контрасту эти пары не попадают.",
-    "markerBorder": {
-      "positive": { "$value": "color-mix(in srgb, {color.positive.500} 35%, transparent)", "$type": "color" },
-      "negative": { "$value": "color-mix(in srgb, {color.negative.500} 35%, transparent)", "$type": "color" },
-      "warning":  { "$value": "color-mix(in srgb, {color.warning.500} 35%, transparent)",  "$type": "color" },
-      "info":     { "$value": "color-mix(in srgb, {color.info.500} 35%, transparent)",     "$type": "color" },
-      "primary":  { "$value": "color-mix(in srgb, {color.primary.500} 35%, transparent)",  "$type": "color" }
-    },
-    "markerBg": {
-      "positive": { "$value": "color-mix(in srgb, {color.positive.500} 12%, {bg.surface})", "$type": "color" },
-      "negative": { "$value": "color-mix(in srgb, {color.negative.500} 12%, {bg.surface})", "$type": "color" },
-      "warning":  { "$value": "color-mix(in srgb, {color.warning.500} 12%, {bg.surface})",  "$type": "color" },
-      "info":     { "$value": "color-mix(in srgb, {color.info.500} 12%, {bg.surface})",     "$type": "color" }
-    }
-  },
-
-  "kpi": {
-    "$description": "Цвета парадной карточки показателя (.kpi--featured). Из витрины: подложка — linear-gradient(135deg, --primary-900 0%, --neutral-1000 100%), подпись и подстрочник — rgba(255,255,255,0.65), значение — #fff, линия спарклайна — #b69cff (это --primary-300), дельта — color --pos-400 на фоне rgba(45,193,135,0.18). Градиент не переворачивается темой: в макетах у .kpi--featured нет тёмного переопределения, и тёмная тема повторяет светлую ступень в ступень — поэтому оба файла тем содержат одинаковые значения. Сам градиент собирается в компоненте из двух токенов-остановок: тип gradient в системе не заведён, а класть литеральную запись linear-gradient в токен значит потерять проверку на литеральные цвета. Дельта описана только для положительного тона — в витрине парадная карточка ровно одна, и дельта у неё положительная; отрицательный и нейтральный тон остаются на общих trend.* (светлый чип на тёмной подложке), вопрос записан в DESIGN.md. Тон дельты здесь взят из непереворачиваемого {color.positive.400}, а не из trend.*: в макетах он записан переменной --pos-400, которая переворачивается локалью (data-direction=\"ea\"), но фон рядом с ней задан литеральной rgba зелёного и не переворачивается — переворачивать одну половину пары нельзя. То же решение, что у Banner, Dialog и Timeline. Белый берётся из {color.neutral.0}, а не из fg.onPrimary: это фиксированная парадная поверхность, а не цвет поверх основного действия.",
-    "featuredBgFrom": { "$value": "{color.primary.900}", "$type": "color" },
-    "featuredBgTo": { "$value": "{color.neutral.1000}", "$type": "color" },
-    "featuredFg": { "$value": "{color.neutral.0}", "$type": "color" },
-    "featuredFgMuted": { "$value": "color-mix(in srgb, {color.neutral.0} 65%, transparent)", "$type": "color" },
-    "featuredSparkStroke": { "$value": "{color.primary.300}", "$type": "color" },
-    "featuredDeltaPositiveFg": { "$value": "{color.positive.400}", "$type": "color" },
-    "featuredDeltaPositiveBg": { "$value": "color-mix(in srgb, {color.positive.400} 18%, transparent)", "$type": "color" }
   },
   "progress": {
-    "$description": "Штриховка активной заливки прогресса. Из макетов (.progress__fill--striped): linear-gradient(45deg, ...) на четырёх остановках, светлый тон — rgba(255,255,255,0.22). Это осветление поверх заливки любого варианта — от primary до neutral, — поэтому тон белый и не берётся из ступени какой-либо палитры. Значение записано литеральной rgba, а не color-mix с {color.neutral.0}: остановок в градиенте четыре, и все они должны быть одним и тем же цветом. Совпадение с tabs.pillActiveBadgeBg (та же rgba) случайно: счётчик на активной вкладке — подложка бейджа, а не текстура заливки, и меняются они независимо.",
-    "stripe": { "$value": "rgba(255, 255, 255, 0.22)", "$type": "color" },
     "fillNeutral": {
       "$value": "{color.neutral.400}",
       "$type": "color",
       "$description": "Заливка нейтрального варианта полосы и кольца прогресса. Из reference (.progress--neutral .progress__fill, .ring--neutral .ring__fill): --neutral-400 в обеих темах. Остальные варианты берут готовые action.*.bg и status.*.fg — значения совпадают."
-    }
-  },
-  "sidebar": {
-    "$description": "Цвета карточки-призыва в подвале рельса (.sidenav__cta). Из витрины (#sidebar): подложка — linear-gradient(135deg, color-mix(in srgb, --primary-500 14%, --bg-surface), color-mix(in srgb, --accent-500 12%, --bg-surface)), рамка — color-mix(in srgb, --primary-500 22%, transparent). Градиент собирается в компоненте из двух токенов-остановок: тип gradient в системе не заведён, а литеральная запись linear-gradient в токене потеряла бы проверку на литеральные цвета — то же решение, что у kpi.featuredBg*. Формулы одни на обе темы: в макетах у .sidenav__cta нет тёмного переопределения, а ссылка {bg.surface} разрешается в тёмную поверхность сама. Доли 14/12/22% заданы дизайнерами покомпонентно и с долями dialog.icon.*Bg и banner.border.* не связаны — общих токенов поэтому нет. color-mix статически не считается, в отчёт по контрасту эта пара не попадает.",
-    "ctaBgFrom": {
-      "$value": "color-mix(in srgb, {color.primary.500} 14%, {bg.surface})",
-      "$type": "color"
-    },
-    "ctaBgTo": {
-      "$value": "color-mix(in srgb, {color.accent.500} 12%, {bg.surface})",
-      "$type": "color"
-    },
-    "ctaBorder": {
-      "$value": "color-mix(in srgb, {color.primary.500} 22%, transparent)",
-      "$type": "color"
-    },
-    "tooltipBg": {
-      "$value": "{color.neutral.800}",
-      "$type": "color",
-      "$description": "Подсказка свёрнутого рельса. Из reference (.is-collapsed .sidenav__item[data-tip]:hover::after): --neutral-800 и --neutral-0, а не пара bg.inverse / fg.inverse — тёмная тема их не переворачивает, подсказка тёмная в обеих."
-    },
-    "tooltipFg": { "$value": "{color.neutral.0}", "$type": "color" }
-  },
-  "badge": {
-    "$description": "Сплошной бейдж. Из reference (.badge--solid): фон --neutral-800, текст #fff — текст задан в макетах литералом, а не ступенью шкалы, и переносится как есть. Темой не меняется: бейдж тёмный в обеих темах.",
-    "solidBg": { "$value": "{color.neutral.800}", "$type": "color" },
-    "solidFg": { "$value": "#ffffff", "$type": "color" }
-  },
-  "upload": {
-    "borderHover": {
-      "$value": "{color.primary.400}",
-      "$type": "color",
-      "$description": "Рамка зоны загрузки под курсором. Из reference (.dropzone:hover, .dropzone--inline:hover): --primary-400 в обеих темах. Семантического токена с этим значением в светлой теме нет: action.primary.bgHover — 600, border.focus — 500."
-    }
-  },
-  "objectCard": {
-    "errorBorder": {
-      "$value": "{color.negative.400}",
-      "$type": "color",
-      "$description": "Рамка карточки с ошибкой. Из reference (.obj-card.is-error): --neg-400 в обеих темах. action.danger.fg совпадает только в тёмной теме (в светлой — 500), status.negative.fg — ни в одной. В макетах --neg-400 переворачивается локалью (data-direction=\"ea\"), здесь взята непереворачиваемая шкала — как у остальных статусных цветов, вопрос записан в DESIGN.md."
     }
   }
 }

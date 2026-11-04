@@ -96,7 +96,7 @@ export const group = style({
   height: vars.controlHeight.md,
   background: vars.bg.surface,
   border: `1px solid ${vars.border.default}`,
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
   overflow: 'hidden',
 
   transitionProperty: 'border-color, box-shadow',

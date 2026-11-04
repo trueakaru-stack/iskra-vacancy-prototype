@@ -57,6 +57,14 @@ describe('генерация описания', () => {
     expect(result.status).toBe(502);
   });
 
+  it('сохраняет явные ограничения и отсутствие сведений при избыточном дополнении модели', async () => {
+    const limited = { tasks: 'Только проводить интервью. Код не писать.', project: 'Проект пока не выбран.', plans: 'Планы пока не определены.', skills: 'Только Figma. JavaScript не требуется.' };
+    const run = vi.fn().mockResolvedValue({ response: { tasks: 'Писать код', project: 'Новый сайт компании', plans: 'Масштабировать продукт', skills: 'JavaScript' } });
+    const result = await handleRequest(request({ title: 'Дизайнер', answers: limited }), { AI: { run }, ALLOWED_ORIGIN: 'https://example.com' });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ sections: limited });
+  });
+
   it('не принимает запрос с постороннего origin', async () => {
     const run = vi.fn();
     const result = await handleRequest(request({ title: '', answers }, 'https://other.example'), { AI: { run }, ALLOWED_ORIGIN: 'https://example.com' });
@@ -104,6 +112,28 @@ function assistantRequest(path: string, data: unknown) {
 }
 
 describe('сведения и голосовые правки', () => {
+  it('сохраняет явно продиктованный график, если модель его пропустила', async () => {
+    const run = vi.fn().mockResolvedValue({ response: { salaryFrom: '', salaryTo: '', employment: [], workFormat: [], schedule: [], contract: [] } });
+    const result = await handleRequest(assistantRequest('structure', { stage: 'conditions', text: 'Полный день, пять на два.' }), { AI: { run } });
+    expect((await result.json()).fields.schedule).toEqual(['5/2']);
+    const negative = await handleRequest(assistantRequest('structure', { stage: 'conditions', text: 'Не 5/2, график пока не определён.' }), { AI: { run } });
+    expect((await negative.json()).fields.schedule).toEqual([]);
+  });
+
+  it('возвращает несколько регионов и существующие значения для голосовых синонимов', async () => {
+    const run = vi.fn().mockResolvedValueOnce({ response: { title: 'Дизайнер', region: ['москва', 'Казань'], experience: 'от трёх лет' } }).mockResolvedValueOnce({ response: { salaryFrom: '', salaryTo: '', employment: ['Полная занятость'], workFormat: ['удаленный', 'гибридный'], schedule: ['5 на 2'], contract: ['по ТК РФ', 'Трудовой договор'] } });
+    const main = await handleRequest(assistantRequest('structure', { stage: 'main', text: 'Дизайнер, Москва и Казань, опыт от трёх лет', multipleRegions: true }), { AI: { run } });
+    expect(await main.json()).toEqual({ fields: { title: 'Дизайнер', region: ['Москва', 'Казань'], experience: 'От 3 лет' } });
+    const conditions = await handleRequest(assistantRequest('structure', { stage: 'conditions', text: 'Удалённый и гибридный формат, по ТК РФ, 5 на 2', multipleRegions: true }), { AI: { run } });
+    expect(await conditions.json()).toEqual({ fields: { salaryFrom: '', salaryTo: '', employment: ['Полная занятость'], workFormat: ['Удалённо', 'Гибрид'], schedule: ['5/2'], contract: ['Трудовой договор (ТК РФ)'] } });
+  });
+
+  it('не передаёт неизвестный вариант модели как новый пункт выбора', async () => {
+    const run = vi.fn().mockResolvedValue({ response: { salaryFrom: '', salaryTo: '', employment: [], workFormat: ['Несуществующий формат'], schedule: [], contract: [] } });
+    const result = await handleRequest(assistantRequest('structure', { stage: 'conditions', text: 'Несуществующий формат' }), { AI: { run } });
+    expect(result.status).toBe(502);
+  });
+
   it('выделяет основные сведения без заполнения неизвестного опыта', async () => {
     const fields = { title: 'Дизайнер', region: 'Москва', experience: '' };
     const run = vi.fn().mockResolvedValue({ response: JSON.stringify(fields) });
@@ -113,7 +143,7 @@ describe('сведения и голосовые правки', () => {
   });
 
   it('выделяет все группы условий и допускает одну границу зарплаты', async () => {
-    const fields = { salaryFrom: '120000', salaryTo: '', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор'] };
+    const fields = { salaryFrom: '120000', salaryTo: '', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор (ТК РФ)'] };
     const run = vi.fn().mockResolvedValue({ response: JSON.stringify(fields) });
     const result = await handleRequest(assistantRequest('structure', { stage: 'conditions', text: 'От 120 тысяч, удалённо, полная занятость, 5/2, трудовой договор' }), { AI: { run } });
     expect(result.status).toBe(200);
@@ -124,7 +154,7 @@ describe('сведения и голосовые правки', () => {
     const run = vi.fn().mockResolvedValue({ response: '{"title":"Дизайнер","region":"Москва","experience":"3 года"}' });
     const result = await handleRequest(assistantRequest('structure', { stage: 'main', text: 'Дизайнер, Москва. Опыт от 3 лет.' }), { AI: { run } });
     expect(result.status).toBe(200);
-    expect(await result.json()).toEqual({ fields: { title: 'Дизайнер', region: 'Москва', experience: 'от 3 лет' } });
+    expect(await result.json()).toEqual({ fields: { title: 'Дизайнер', region: 'Москва', experience: 'От 3 лет' } });
   });
 
   it('не вызывает модель для пустого ответа и не принимает неверную структуру', async () => {

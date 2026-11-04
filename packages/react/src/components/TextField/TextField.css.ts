@@ -61,7 +61,7 @@ export const inputWrapper = style({
   width: '100%',
   background: vars.bg.surface,
   border: `1px solid ${vars.border.default}`,
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
   color: vars.fg.default,
 
   transitionProperty: 'border-color, box-shadow',

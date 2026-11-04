@@ -1,16 +1,20 @@
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NeoBookProvider } from '@neobook/react/theme/NeoBookProvider';
+import { LocaleProvider } from '@neobook/i18n';
 import { App } from '../src/App';
 import { generateDescription, reviseVacancy, structureAnswer } from '../src/generation';
 
 vi.mock('../src/generation', () => ({
   generateDescription: vi.fn(), structureAnswer: vi.fn(), reviseVacancy: vi.fn(),
 }));
+vi.mock('../src/vacancyOptions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/vacancyOptions')>();
+  return { ...actual, REGION_OPTIONS: actual.REGION_OPTIONS.filter(({ name }) => ['Вся Россия', 'Москва', 'Казань', 'Московская область'].includes(name)) };
+});
 const generated = { tasks: 'Исследования', project: 'Продукт', plans: 'Развитие', skills: 'Figma' };
-const main = { title: 'Дизайнер', region: 'Москва', experience: 'От 3 лет' };
-const conditions = { salaryFrom: '120000', salaryTo: '180000', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор'] };
+const main = { title: 'Дизайнер', region: ['Москва'], experience: 'От 3 лет' };
+const conditions = { salaryFrom: '120000', salaryTo: '180000', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор (ТК РФ)'] };
 
 beforeAll(() => {
   window.matchMedia = vi.fn().mockImplementation(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
@@ -22,7 +26,7 @@ beforeEach(() => {
   vi.mocked(reviseVacancy).mockReset().mockResolvedValue({ fields: { salaryFrom: '150000' }, sections: { skills: 'Figma и HTML' } });
 });
 afterEach(cleanup);
-function mount() { return render(<NeoBookProvider locale="ru-RU" defaultPreference="light" persist={false}><App /></NeoBookProvider>); }
+function mount() { return render(<LocaleProvider locale="ru-RU"><App /></LocaleProvider>); }
 async function openCreation() {
   fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
   return screen.findByRole('dialog');
@@ -85,7 +89,7 @@ describe('создание вакансии голосом', () => {
     const answer = within(modal).getByLabelText('Ваш ответ');
     fireEvent.change(answer, { target: { value: '   ' } });
     expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
-    vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: 'Москва', experience: '' });
+    vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: ['Москва'], experience: '' });
     fireEvent.change(answer, { target: { value: 'Москва, опыт три года' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
     expect(await within(modal).findByRole('alert')).toHaveTextContent('Назовите должность');
@@ -103,7 +107,7 @@ describe('создание вакансии голосом', () => {
     expect(structureAnswer).toHaveBeenCalledTimes(2);
     await fillQuestions(modal);
     await within(modal).findByLabelText('Основные обязанности');
-    expect(within(modal).getByLabelText('Регион')).toHaveValue('Москва');
+    expect(within(modal).getByRole('gridcell', { name: 'Москва Удалить Москва' })).toBeInTheDocument();
     expect(within(modal).getByRole('button', { name: /Опыт работы/ })).toHaveTextContent('От 3 лет');
     expect(within(modal).getByLabelText('Зарплата от')).toHaveValue('120\u00a0000');
     for (const text of ['Полная занятость', 'Удалённо', '5/2', 'Трудовой договор (ТК РФ)']) expect(within(modal).getByRole('gridcell', { name: text + ' Удалить ' + text })).toBeInTheDocument();
@@ -151,7 +155,7 @@ describe('создание вакансии голосом', () => {
     expect(await within(modal).findByLabelText('Ваш ответ')).toHaveValue('Мой ответ');
     expect(structureAnswer).toHaveBeenCalledOnce();
     fireEvent.click(within(steps).getByRole('button', { name: /Основное/ }));
-    vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: 'Москва', experience: '' });
+    vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: ['Москва'], experience: '' });
     fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Только Москва' } });
     fireEvent.click(within(steps).getByRole('button', { name: /Описание/ }));
     expect(await within(modal).findByRole('alert')).toHaveTextContent('Назовите должность');
@@ -220,16 +224,15 @@ describe('создание вакансии голосом', () => {
     await fillQuestions(modal);
     const title = await within(modal).findByLabelText(/Название вакансии/);
     fireEvent.change(title, { target: { value: 'Аналитик' } });
-    fireEvent.change(within(modal).getByLabelText('Регион'), { target: { value: 'Казань' } });
     fireEvent.click(within(modal).getByRole('button', { name: /Опыт работы/ }));
-    fireEvent.click(await screen.findByRole('option', { name: 'Более 6 лет' }));
+    fireEvent.click(await screen.findByRole('option', { name: 'От 6 лет' }));
     fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
     fireEvent.click(within(modal).getByRole('button', { name: 'Создать описание' }));
     expect(await within(modal).findByLabelText(/Название вакансии/)).toHaveValue('Аналитик');
-    expect(within(modal).getByRole('button', { name: /Опыт работы/ })).toHaveTextContent('Более 6 лет');
+    expect(within(modal).getByRole('button', { name: /Опыт работы/ })).toHaveTextContent('От 6 лет');
     fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
     expect(await screen.findByRole('heading', { name: 'Аналитик' })).toBeInTheDocument();
-    expect(screen.getByRole('article')).toHaveTextContent('Казань');
+    expect(screen.getByRole('article')).toHaveTextContent('Москва');
   });
 
   it('не сохраняет пустое название и перевёрнутый диапазон при ручном редактировании', async () => {
@@ -253,7 +256,7 @@ describe('создание вакансии голосом', () => {
     mount(); await createSaved();
     fireEvent.click(screen.getByRole('button', { name: 'Редактировать' }));
     fireEvent.change(screen.getByLabelText(/Название вакансии/), { target: { value: 'Редактор' } });
-    fireEvent.change(screen.getByLabelText('Регион'), { target: { value: '' } });
+    fireEvent.click(within(document.querySelector('.region-choice') as HTMLElement).getByRole('button', { name: /Удалить/ }));
     fireEvent.change(screen.getByLabelText('Основные обязанности'), { target: { value: 'Мой текст' } });
     fireEvent.click(screen.getByRole('button', { name: 'Сохранить изменения' }));
     expect(reviseVacancy).not.toHaveBeenCalled();
@@ -263,7 +266,7 @@ describe('создание вакансии голосом', () => {
     fireEvent.change(screen.getByLabelText('Ваш ответ'), { target: { value: 'Добавь HTML' } });
     fireEvent.click(screen.getByRole('button', { name: 'Показать изменения' }));
     await screen.findByRole('heading', { name: 'Проверка изменений' });
-    expect(reviseVacancy).toHaveBeenCalledWith('Добавь HTML', expect.objectContaining({ title: 'Редактор', region: '' }), expect.objectContaining({ tasks: 'Мой текст' }));
+    expect(reviseVacancy).toHaveBeenCalledWith('Добавь HTML', expect.objectContaining({ title: 'Редактор', region: [] }), expect.objectContaining({ tasks: 'Мой текст' }));
     fireEvent.click(screen.getByRole('button', { name: 'Сохранить изменения' }));
     fireEvent.click(screen.getByRole('button', { name: 'К вакансиям' }));
     await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Редактор/ })); });

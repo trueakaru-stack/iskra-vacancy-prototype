@@ -16,7 +16,7 @@ import clsx from 'clsx';
 import { IconX } from '@neobook/icons';
 import * as css from './Tag.css.js';
 
-export type TagVariant = 'neutral' | 'primary' | 'accent';
+export type TagVariant = 'neutral';
 interface TagGroupBaseProps<T extends object>
   extends Omit<
       RACTagGroupProps,

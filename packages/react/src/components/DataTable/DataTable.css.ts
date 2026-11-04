@@ -199,7 +199,7 @@ export const root = style({
   // Панель и подвал лежат вне `.dt` и межстрочный от таблицы не наследуют.
   lineHeight: vars.lineHeight.normal,
   border: `1px solid ${vars.border.subtle}`,
-  borderRadius: vars.radius.md,
+  borderRadius: vars.radius.lg,
   background: vars.bg.surface,
   overflow: 'hidden',
 });
@@ -557,7 +557,7 @@ export const treeToggle = style({
   margin: 0,
   background: 'transparent',
   color: vars.fg.muted,
-  borderRadius: vars.radius.xs,
+  borderRadius: vars.radius.lg,
   cursor: 'pointer',
   outline: 'none',
 
@@ -769,7 +769,7 @@ export const dragHandle = style({
   border: 0,
   margin: 0,
   background: 'transparent',
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
   color: vars.fg.muted,
   cursor: 'grab',
   touchAction: 'none',

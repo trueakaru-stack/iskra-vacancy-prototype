@@ -36,7 +36,7 @@ export const base = style({
   paddingBlock: 0,
   paddingInline: vars.buttonPaddingInline.md,
   border: '1px solid transparent',
-  borderRadius: vars.radius.sm,
+  borderRadius: vars.radius.lg,
   fontFamily: vars.fontFamily.sans,
   fontSize: vars.fontSize[13],
   fontWeight: vars.fontWeight.medium,
@@ -92,7 +92,7 @@ export const size = styleVariants({
     height: vars.controlHeight.xs,
     paddingInline: vars.buttonPaddingInline.xs,
     fontSize: vars.fontSize[11],
-    borderRadius: vars.radius.xs,
+    borderRadius: vars.radius.lg,
     gap: vars.space[2],
   },
   sm: {
@@ -162,14 +162,7 @@ export const variant = styleVariants({
       '&[data-pressed]': { background: vars.action.primary.bgActive },
     },
   },
-  accent: {
-    background: vars.action.accent.bg,
-    color: vars.fg.onAccent,
-    selectors: {
-      '&[data-hovered]': { background: vars.action.accent.bgHover },
-      '&[data-pressed]': { background: vars.action.accent.bgActive },
-    },
-  },
+
   secondary: {
     background: vars.bg.surface,
     borderColor: vars.border.default,
@@ -186,23 +179,8 @@ export const variant = styleVariants({
       '&[data-pressed]': { background: vars.bg.active, color: vars.fg.default },
     },
   },
-  danger: {
-    background: vars.action.danger.bg,
-    color: vars.fg.onDanger,
-    selectors: {
-      '&[data-hovered]': { background: vars.action.danger.bgHover },
-      '&[data-pressed]': { background: vars.action.danger.bgActive },
-    },
-  },
-  link: {
-    color: vars.action.primary.fg,
-    paddingInline: 0,
-    height: 'auto',
-    selectors: {
-      '&[data-hovered]': { textDecoration: 'underline', background: 'none' },
-      '&[data-pressed]': { color: vars.action.primary.fgActive },
-    },
-  },
+
+
 });
 
 /** Квадратная кнопка: ширина равна высоте своего размера. */
@@ -310,15 +288,15 @@ globalStyle(`${buttonGroup} > *`, {
 
 // .btn-group .btn:first-child — внешние углы в начале ряда.
 globalStyle(`${buttonGroup} > *:first-child`, {
-  borderStartStartRadius: vars.radius.sm,
-  borderEndStartRadius: vars.radius.sm,
+  borderStartStartRadius: vars.radius.lg,
+  borderEndStartRadius: vars.radius.lg,
   marginInlineStart: 0,
 });
 
 // .btn-group .btn:last-child — внешние углы в конце ряда.
 globalStyle(`${buttonGroup} > *:last-child`, {
-  borderStartEndRadius: vars.radius.sm,
-  borderEndEndRadius: vars.radius.sm,
+  borderStartEndRadius: vars.radius.lg,
+  borderEndEndRadius: vars.radius.lg,
 });
 
 globalStyle(`${base} svg`, {

@@ -44,7 +44,7 @@ export const tooltip = style({
   background: vars.bg.inverse,
   paddingBlock: vars.tooltip.paddingBlock,
   paddingInline: vars.space[4],
-  borderRadius: vars.radius.xs,
+  borderRadius: vars.radius.lg,
   boxShadow: vars.shadow.md,
   whiteSpace: 'normal',
   maxWidth: vars.tooltip.maxWidth,

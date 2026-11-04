@@ -1,3 +1,5 @@
+import { ALL_REGIONS, canonicalChoice, canonicalExperience, canonicalRegion, type ChoiceField } from './vacancyOptions';
+
 export const MAX_ANSWER_LENGTH = 4_000;
 
 export const QUESTIONS = [
@@ -32,7 +34,7 @@ export type Answers = Record<QuestionId, string>;
 
 export interface VacancyDraft {
   title: string;
-  region: string;
+  region: string[];
   experience: string;
   salaryFrom: string;
   salaryTo: string;
@@ -53,7 +55,7 @@ export interface VacancySections {
 export interface VacancyRow {
   id: string;
   title: string;
-  region: string;
+  region: string[];
   responses: number | null;
   processed: number | null;
   expires: string | null;
@@ -63,7 +65,7 @@ export const DEMO_VACANCIES: readonly VacancyRow[] = [
   {
     id: 'sample-sales-manager',
     title: 'Менеджер по продажам HR-продукта (B2B, IT компания)',
-    region: 'Москва',
+    region: ['Москва'],
     responses: 206,
     processed: 1,
     expires: '2026-02-22',
@@ -71,7 +73,7 @@ export const DEMO_VACANCIES: readonly VacancyRow[] = [
   {
     id: 'sample-marketing-director',
     title: 'Руководитель департамента маркетинга (международный бизнес)',
-    region: 'Москва',
+    region: ['Москва'],
     responses: 369,
     processed: 100,
     expires: '2026-01-17',
@@ -81,7 +83,7 @@ export const DEMO_VACANCIES: readonly VacancyRow[] = [
 export function createEmptyDraft(): VacancyDraft {
   return {
     title: '',
-    region: '',
+    region: [],
     experience: '',
     salaryFrom: '',
     salaryTo: '',
@@ -101,8 +103,8 @@ export interface VacancyRevision {
 }
 export const MAIN_FIELDS = ['title', 'region', 'experience'] as const;
 export const CONDITION_FIELDS = ['salaryFrom', 'salaryTo', 'employment', 'workFormat', 'schedule', 'contract'] as const;
-const TEXT_FIELDS = ['title', 'region', 'experience', 'salaryFrom', 'salaryTo'] as const;
-const ARRAY_FIELDS = ['employment', 'workFormat', 'schedule', 'contract'] as const;
+const TEXT_FIELDS = ['title', 'experience', 'salaryFrom', 'salaryTo'] as const;
+const ARRAY_FIELDS = ['region', 'employment', 'workFormat', 'schedule', 'contract'] as const;
 
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -120,13 +122,21 @@ export function readFieldPatch(value: unknown, stage?: IntakeStage): Partial<Vac
     const text = data[key];
     if (typeof text !== 'string' || text.length > 200) return null;
     if ((key === 'salaryFrom' || key === 'salaryTo') && text !== '' && (!/^\d{1,12}(?:\.\d{1,2})?$/.test(text) || !Number.isFinite(Number(text)))) return null;
-    fields[key] = text.trim();
+    if (key === 'experience') {
+      const experience = canonicalExperience(text);
+      if (experience === null) return null;
+      fields.experience = experience;
+    } else fields[key] = text.trim();
   }
   for (const key of ARRAY_FIELDS) {
     if (!(key in data)) continue;
-    const items = data[key];
-    if (!Array.isArray(items) || items.length > 20 || !items.every((item): item is string => typeof item === 'string' && !!item.trim() && item.length <= 200)) return null;
-    fields[key] = [...new Set(items.map((item) => item.trim()))];
+    const source = data[key];
+    const items = key === 'region' && typeof source === 'string' ? (source.trim() ? source.split(/[,;]/u).map((item) => item.trim()) : []) : source;
+    if (!Array.isArray(items) || items.length > (key === 'region' ? 100 : 20) || !items.every((item): item is string => typeof item === 'string' && !!item.trim() && item.length <= 200)) return null;
+    const canonical = items.map((item) => key === 'region' ? canonicalRegion(item) : canonicalChoice(key as ChoiceField, item));
+    if (canonical.some((item) => item === null)) return null;
+    const values = [...new Set(canonical.filter((item): item is string => item !== null))];
+    fields[key] = key === 'region' && values.includes(ALL_REGIONS) ? [ALL_REGIONS] : values;
   }
   if (fields.salaryFrom && fields.salaryTo && Number(fields.salaryFrom) > Number(fields.salaryTo)) return null;
   return fields;
@@ -178,8 +188,7 @@ export function filterVacancies(
   const normalizedRegion = region.trim().toLocaleLowerCase('ru-RU');
   return vacancies.filter((vacancy) => {
     const matchesTitle = vacancy.title.toLocaleLowerCase('ru-RU').includes(normalizedQuery);
-    const matchesRegion =
-      !normalizedRegion || vacancy.region.toLocaleLowerCase('ru-RU') === normalizedRegion;
+    const matchesRegion = !normalizedRegion || vacancy.region.includes(ALL_REGIONS) || vacancy.region.some((value) => value.toLocaleLowerCase('ru-RU') === normalizedRegion);
     return matchesTitle && matchesRegion;
   });
 }
@@ -188,7 +197,7 @@ export function toVacancyRow(draft: VacancyDraft, id: string): VacancyRow {
   return {
     id,
     title: draft.title.trim(),
-    region: draft.region.trim(),
+    region: draft.region.map((value) => value.trim()),
     responses: null,
     processed: null,
     expires: null,
