@@ -6,6 +6,9 @@ import {
   filterVacancies,
   isFilled,
   toVacancyRow,
+  readFieldPatch,
+  readRevision,
+  draftError,
   type VacancyRow,
 } from '../src/vacancy';
 
@@ -28,6 +31,31 @@ describe('прогресс вопросов', () => {
     expect(appendTranscript('Уже введено', ' новый текст ')).toBe('Уже введено новый текст');
     expect(appendTranscript('Уже введено', '  ')).toBe('Уже введено');
     expect(appendTranscript('  ', 'Первый ответ')).toBe('Первый ответ');
+  });
+});
+
+describe('структурирование голосовых сведений', () => {
+  it('принимает только сведения нужного этапа', () => {
+    expect(readFieldPatch({ title: ' Дизайнер ', region: 'Москва', experience: 'От трёх лет' }, 'main')).toEqual({ title: 'Дизайнер', region: 'Москва', experience: 'От трёх лет' });
+    expect(readFieldPatch({ title: 'Дизайнер', region: '' }, 'main')).toBeNull();
+    expect(readFieldPatch({ title: 'Дизайнер', region: '', experience: '', salaryFrom: '120000' }, 'main')).toBeNull();
+  });
+
+  it('отклоняет неверную зарплату и типы списков', () => {
+    expect(readFieldPatch({ salaryFrom: '-1' })).toBeNull();
+    expect(readFieldPatch({ salaryFrom: '120 тысяч' })).toBeNull();
+    expect(readFieldPatch({ salaryFrom: '200000', salaryTo: '100000' })).toBeNull();
+    expect(readFieldPatch({ employment: 'Удалённо' })).toBeNull();
+    expect(readFieldPatch({ contract: [null] })).toBeNull();
+    expect(readFieldPatch({ salaryFrom: '120000', salaryTo: '' })).toEqual({ salaryFrom: '120000', salaryTo: '' });
+  });
+
+  it('разрешает явное удаление раздела, но запрещает неизвестные поля и пустую поправку', () => {
+    expect(readRevision({ fields: {}, sections: { plans: '' } })).toEqual({ fields: {}, sections: { plans: '' } });
+    expect(readRevision({ fields: {}, sections: {} })).toBeNull();
+    expect(readRevision({ fields: { unknown: 'a' }, sections: {} })).toBeNull();
+    expect(readRevision({ fields: {}, sections: { unknown: 'a' } })).toBeNull();
+    expect(draftError({ ...createEmptyDraft(), title: ' ' })).toMatch(/должность/);
   });
 });
 

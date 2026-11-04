@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handleRequest } from '../worker/src/index';
+import { createEmptyDraft } from '../src/vacancy';
 
 const answers = { tasks: 'Исследовать', project: 'Сервис', plans: 'Развивать сервис', skills: 'Figma' };
 const sections = { tasks: 'Проводить исследования', project: 'Сервис', plans: 'Развитие сервиса', skills: 'Figma' };
@@ -82,5 +83,60 @@ describe('распознавание записи', () => {
     const result = await handleRequest(audio, { AI: { run } });
     expect(result.status).toBe(415);
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+function assistantRequest(path: string, data: unknown) {
+  return new Request('https://worker.example/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+
+describe('сведения и голосовые правки', () => {
+  it('выделяет основные сведения без заполнения неизвестного опыта', async () => {
+    const fields = { title: 'Дизайнер', region: 'Москва', experience: '' };
+    const run = vi.fn().mockResolvedValue({ response: JSON.stringify(fields) });
+    const result = await handleRequest(assistantRequest('structure', { stage: 'main', text: 'Нужен дизайнер в Москве' }), { AI: { run } });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ fields });
+  });
+
+  it('выделяет все группы условий и допускает одну границу зарплаты', async () => {
+    const fields = { salaryFrom: '120000', salaryTo: '', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор'] };
+    const run = vi.fn().mockResolvedValue({ response: JSON.stringify(fields) });
+    const result = await handleRequest(assistantRequest('structure', { stage: 'conditions', text: 'От 120 тысяч, удалённо, полная занятость, 5/2, трудовой договор' }), { AI: { run } });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ fields });
+  });
+
+  it('сохраняет явно названную нижнюю границу опыта, даже если модель её опустила', async () => {
+    const run = vi.fn().mockResolvedValue({ response: '{"title":"Дизайнер","region":"Москва","experience":"3 года"}' });
+    const result = await handleRequest(assistantRequest('structure', { stage: 'main', text: 'Дизайнер, Москва. Опыт от 3 лет.' }), { AI: { run } });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ fields: { title: 'Дизайнер', region: 'Москва', experience: 'от 3 лет' } });
+  });
+
+  it('не вызывает модель для пустого ответа и не принимает неверную структуру', async () => {
+    const run = vi.fn().mockResolvedValue({ response: '{"title":"Дизайнер"}' });
+    const empty = await handleRequest(assistantRequest('structure', { stage: 'main', text: '  ' }), { AI: { run } });
+    expect(empty.status).toBe(400);
+    expect(run).not.toHaveBeenCalled();
+    const invalid = await handleRequest(assistantRequest('structure', { stage: 'main', text: 'Дизайнер' }), { AI: { run } });
+    expect(invalid.status).toBe(502);
+  });
+
+  it('возвращает только запрошенные правки без переписывания вакансии', async () => {
+    const { answers: _answers, ...draft } = { ...createEmptyDraft(), title: 'Дизайнер' };
+    const patch = { fields: { salaryFrom: '150000' }, sections: { skills: 'Figma, HTML' } };
+    const run = vi.fn().mockResolvedValue({ response: JSON.stringify(patch) });
+    const result = await handleRequest(assistantRequest('revise', { instruction: 'От 150 тысяч и добавь HTML', draft, sections }), { AI: { run } });
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual(patch);
+  });
+
+  it('не разрешает голосовой правке удалить обязательное название или перевернуть диапазон', async () => {
+    const { answers: _answers, ...draft } = { ...createEmptyDraft(), title: 'Дизайнер', salaryTo: '180000' };
+    const run = vi.fn().mockResolvedValueOnce({ response: '{"fields":{"title":""},"sections":{}}' }).mockResolvedValueOnce({ response: '{"fields":{"salaryFrom":"200000"},"sections":{}}' });
+    const data = { instruction: 'Измени вакансию', draft, sections };
+    expect((await handleRequest(assistantRequest('revise', data), { AI: { run } })).status).toBe(422);
+    expect((await handleRequest(assistantRequest('revise', data), { AI: { run } })).status).toBe(422);
   });
 });

@@ -1,327 +1,246 @@
 import '@testing-library/jest-dom/vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NeoBookProvider } from '@neobook/react/theme/NeoBookProvider';
 import { App } from '../src/App';
-import { generateDescription } from '../src/generation';
+import { generateDescription, reviseVacancy, structureAnswer } from '../src/generation';
 
 vi.mock('../src/generation', () => ({
-  generateDescription: vi.fn(async () => ({ tasks: 'Исследования', project: 'Продукт', plans: 'Развитие', skills: 'Figma' })),
+  generateDescription: vi.fn(), structureAnswer: vi.fn(), reviseVacancy: vi.fn(),
 }));
+const generated = { tasks: 'Исследования', project: 'Продукт', plans: 'Развитие', skills: 'Figma' };
+const main = { title: 'Дизайнер', region: 'Москва', experience: 'От 3 лет' };
+const conditions = { salaryFrom: '120000', salaryTo: '180000', employment: ['Полная занятость'], workFormat: ['Удалённо'], schedule: ['5/2'], contract: ['Трудовой договор'] };
 
 beforeAll(() => {
   window.matchMedia = vi.fn().mockImplementation(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
   Element.prototype.scrollIntoView = vi.fn();
 });
+beforeEach(() => {
+  vi.mocked(generateDescription).mockReset().mockResolvedValue(generated);
+  vi.mocked(structureAnswer).mockReset().mockImplementation(async (stage) => stage === 'main' ? main : conditions);
+  vi.mocked(reviseVacancy).mockReset().mockResolvedValue({ fields: { salaryFrom: '150000' }, sections: { skills: 'Figma и HTML' } });
+});
 afterEach(cleanup);
-
-function mount() {
-  return render(<NeoBookProvider locale="ru-RU" defaultPreference="light" persist={false}><App /></NeoBookProvider>);
-}
-
-async function goToQuestions() {
+function mount() { return render(<NeoBookProvider locale="ru-RU" defaultPreference="light" persist={false}><App /></NeoBookProvider>); }
+async function openCreation() {
   fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
-  const modal = await screen.findByRole('dialog');
-  fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: 'Дизайнер' } });
+  return screen.findByRole('dialog');
+}
+async function goToQuestions(withConditions = false) {
+  const modal = await openCreation();
+  fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Дизайнер, Москва, опыт от трёх лет' } });
   fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+  await within(modal).findByRole('heading', { name: 'Условия' });
+  if (withConditions) fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'От 120 до 180 тысяч, полная занятость, удалённо, 5/2, трудовой договор' } });
   fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+  await within(modal).findByText('Вопрос 1 из 4');
   return modal;
 }
+async function fillQuestions(modal: HTMLElement) {
+  for (let index = 0; index < 4; index++) {
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Ответ ' + (index + 1) } });
+    fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
+  }
+}
+async function createSaved() {
+  const modal = await goToQuestions(true);
+  await fillQuestions(modal);
+  await within(modal).findByLabelText('Основные обязанности');
+  fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  return screen.getByRole('article', { name: 'Описание вакансии' });
+}
 
-describe('создание вакансии', () => {
-  it('показывает оба пункта меню без отдельного экрана подключения', () => {
+describe('создание вакансии голосом', () => {
+  it('показывает текущий раздел и не открывает анализ', () => {
     mount();
+    expect(screen.getByRole('heading', { name: 'Вакансии' })).toBeInTheDocument();
     const menu = screen.getByRole('navigation', { name: 'Основное меню' });
-    const vacancies = within(menu).getByRole('button', { name: 'Вакансии' });
-    const connections = within(menu).getByRole('button', { name: 'Подключение вакансий' });
-    expect(vacancies).toHaveAttribute('aria-current', 'page');
-    expect(connections).not.toHaveAttribute('aria-current');
-    expect(connections).toBeDisabled();
-    expect(vacancies.querySelector('svg')).toBeNull();
-    expect(connections.querySelector('svg')).toBeNull();
-    fireEvent.click(connections);
+    expect(within(menu).getByRole('button', { name: 'Вакансии' })).toHaveAttribute('aria-current', 'page');
+    const connection = within(menu).getByRole('button', { name: 'Подключение вакансий' });
+    expect(connection).toBeDisabled();
+    expect(menu.querySelector('svg')).toBeNull();
+    fireEvent.click(connection);
     expect(screen.queryByRole('heading', { name: 'Подключение вакансий' })).not.toBeInTheDocument();
-    expect(screen.getByRole('grid', { name: 'Вакансии' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Список вакансий' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /добавить вакансию/i })).toBeInTheDocument();
   });
 
-  it('не позволяет уйти с первого шага без названия, включая ответ из пробелов', async () => {
+  it('сохраняет колонки и сортирует отклики', () => {
     mount();
-    fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
-    const modal = await screen.findByRole('dialog');
-    const title = within(modal).getByLabelText(/название вакансии/i);
-    const next = within(modal).getByRole('button', { name: 'Далее' });
-    expect(next).toBeDisabled();
-    fireEvent.change(title, { target: { value: '   ' } });
-    expect(next).toBeDisabled();
-    fireEvent.click(next);
-    expect(within(modal).getByRole('heading', { name: 'Основное' })).toBeInTheDocument();
-    fireEvent.change(title, { target: { value: ' Дизайнер ' } });
-    expect(next).toBeEnabled();
-    fireEvent.click(next);
-    expect(within(modal).getByRole('heading', { name: 'Условия' })).toBeInTheDocument();
-    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
-    fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: '' } });
-    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
-  });
-
-  it('показывает нужные колонки и меняет порядок вакансий при сортировке откликов', () => {
-    mount();
-    expect(within(screen.getByRole('navigation', { name: 'Основное меню' })).getByText('Вакансии')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Список вакансий' })).toBeInTheDocument();
-    expect(screen.queryByText(/Всего:/)).not.toBeInTheDocument();
     const table = screen.getByRole('grid', { name: 'Вакансии' });
-    expect(within(table).getAllByRole('columnheader').map((header) => header.textContent)).toEqual([
-      'Название', 'Регион', 'Отклики', 'Истекает',
-    ]);
-    const responses = within(table).getByRole('columnheader', { name: 'Отклики' });
-    fireEvent.click(responses);
-    expect(responses).toHaveAttribute('aria-sort', 'ascending');
-    let rows = within(table).getAllByRole('row').slice(1);
-    expect(rows[0]).toHaveTextContent('206');
-    expect(rows[1]).toHaveTextContent('369');
-    fireEvent.click(responses);
-    expect(responses).toHaveAttribute('aria-sort', 'descending');
-    rows = within(table).getAllByRole('row').slice(1);
-    expect(rows[0]).toHaveTextContent('369');
-    expect(rows[1]).toHaveTextContent('206');
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Название', 'Регион', 'Отклики', 'Истекает']);
+    const header = within(table).getByRole('columnheader', { name: 'Отклики' });
+    fireEvent.click(header); fireEvent.click(header);
+    expect(header).toHaveAttribute('aria-sort', 'descending');
+    expect(within(table).getAllByRole('row')[1]).toHaveTextContent('369');
   });
 
-  it('закрывает окно по Escape и возвращает фокус к кнопке открытия', async () => {
+  it('начинает с голосового ответа и не пропускает пробелы или ответ без должности', async () => {
     mount();
-    const openButton = screen.getByRole('button', { name: /добавить вакансию/i });
-    openButton.focus();
-    fireEvent.click(openButton);
-    const modal = await screen.findByRole('dialog');
-    fireEvent.keyDown(modal, { key: 'Escape', code: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await waitFor(() => expect(openButton).toHaveFocus());
+    const modal = await openCreation();
+    expect(within(modal).getByText('Назовите должность, регион и требуемый опыт работы.')).toBeInTheDocument();
+    expect(within(modal).queryByLabelText(/Название вакансии/)).not.toBeInTheDocument();
+    expect(within(modal).getByRole('button', { name: 'Начать запись' })).toBeInTheDocument();
+    const answer = within(modal).getByLabelText('Ваш ответ');
+    fireEvent.change(answer, { target: { value: '   ' } });
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+    vi.mocked(structureAnswer).mockResolvedValueOnce({ title: '', region: 'Москва', experience: '' });
+    fireEvent.change(answer, { target: { value: 'Москва, опыт три года' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    expect(await within(modal).findByRole('alert')).toHaveTextContent('Назовите должность');
+    expect(answer).toHaveValue('Москва, опыт три года');
+    expect(within(modal).getByRole('heading', { name: 'Основное' })).toBeInTheDocument();
   });
 
-  it('показывает по одному вопросу, проверяет ответ и пересчитывает прогресс при возврате', async () => {
+  it('собирает сведения и условия голосовыми ответами, сохраняет их и не повторяет неизменённый запрос', async () => {
+    mount();
+    const modal = await goToQuestions(true);
+    expect(structureAnswer).toHaveBeenCalledTimes(2);
+    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('От 120 до 180 тысяч, полная занятость, удалённо, 5/2, трудовой договор');
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    expect(structureAnswer).toHaveBeenCalledTimes(2);
+    await fillQuestions(modal);
+    await within(modal).findByLabelText('Основные обязанности');
+    expect(within(modal).getByText('Москва')).toBeInTheDocument();
+    expect(within(modal).getByText('От 3 лет')).toBeInTheDocument();
+    expect(within(modal).getByText('от 120000 до 180000')).toBeInTheDocument();
+    for (const text of ['Полная занятость', 'Удалённо', '5/2', 'Трудовой договор']) expect(within(modal).getByText(text)).toBeInTheDocument();
+    expect(within(modal).queryByLabelText('Что предлагаем')).not.toBeInTheDocument();
+    expect(within(modal).queryByLabelText('Будет преимуществом')).not.toBeInTheDocument();
+  });
+
+  it('при ошибке обработки сохраняет исходный ответ для повторной попытки', async () => {
+    mount();
+    const modal = await openCreation();
+    const answer = within(modal).getByLabelText('Ваш ответ');
+    fireEvent.change(answer, { target: { value: 'Дизайнер в Москве' } });
+    vi.mocked(structureAnswer).mockRejectedValueOnce(new Error('Нет связи'));
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    expect(await within(modal).findByRole('alert')).toHaveTextContent('Нет связи');
+    expect(answer).toHaveValue('Дизайнер в Москве');
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    expect(await within(modal).findByRole('heading', { name: 'Условия' })).toBeInTheDocument();
+  });
+
+  it('пересчитывает круг и сохраняет ответы при возврате', async () => {
     mount();
     const modal = await goToQuestions();
-    const steps = within(modal).getByRole('group', { name: 'Этапы создания вакансии' });
-    expect(steps.querySelector('[aria-current="step"]')).toHaveTextContent('Описание');
-    expect(within(modal).getByText('Вопрос 1 из 4')).toBeInTheDocument();
-    const next = within(modal).getByRole('button', { name: 'Далее' });
-    expect(next).toBeDisabled();
-    const answer = within(modal).getByLabelText('Ваш ответ');
-    fireEvent.change(answer, { target: { value: 'Исследует продукт' } });
+    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Исследовать' } });
     expect(within(modal).getByRole('progressbar', { name: 'Заполненность ответов' })).toHaveAttribute('aria-valuenow', '25');
-    fireEvent.click(next);
-    expect(within(modal).getByText('Вопрос 2 из 4')).toBeInTheDocument();
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
     fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
-    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Исследует продукт');
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Исследовать');
     fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: ' ' } });
     expect(within(modal).getByRole('progressbar', { name: 'Заполненность ответов' })).toHaveAttribute('aria-valuenow', '0');
     expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
   });
 
-  it('показывает обработку на кнопке до получения результата', async () => {
-    let finish: (value: { tasks: string; project: string; plans: string; skills: string }) => void = () => undefined;
+  it('показывает индикатор внутри основной кнопки до ответа сервиса', async () => {
+    let finish: (value: typeof generated) => void = () => undefined;
     vi.mocked(generateDescription).mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
     mount();
     const modal = await goToQuestions();
-    let createButton: HTMLElement | null = null;
-    for (let index = 0; index < 4; index++) {
-      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
-      const button = within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' });
-      if (index === 3) createButton = button;
-      fireEvent.click(button);
-    }
-    if (!createButton) throw new Error('Кнопка создания описания не найдена');
-    expect(createButton).toHaveAttribute('data-pending');
-    expect(createButton).toHaveTextContent('Создать описание');
-    expect(within(createButton).getByRole('progressbar', { name: 'Загрузка' })).toBeInTheDocument();
-    expect(within(modal).getByRole('status')).toHaveTextContent('Создаём описание');
-    await act(async () => { finish({ tasks: 'Задачи', project: 'Проект', plans: 'Планы', skills: 'Навыки' }); });
-    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Задачи');
-  });
-
-  it('принимает одну границу зарплаты и блокирует обратный диапазон', async () => {
-    mount();
-    fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
-    const modal = await screen.findByRole('dialog');
-    fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: 'Дизайнер' } });
-    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
-    const from = within(modal).getByRole('textbox', { name: 'Зарплата от' });
-    const to = within(modal).getByRole('textbox', { name: 'Зарплата до' });
-    fireEvent.change(from, { target: { value: '120000' } });
-    fireEvent.blur(from);
-    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeEnabled();
-    fireEvent.change(to, { target: { value: '80000' } });
-    fireEvent.blur(to);
-    expect(within(modal).getByRole('alert')).toHaveTextContent('Сумма «от» не может быть больше суммы «до».');
-    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
-    fireEvent.change(to, { target: { value: '150000' } });
-    fireEvent.blur(to);
-    expect(within(modal).queryByRole('alert')).not.toBeInTheDocument();
-    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeEnabled();
-  });
-
-  it('сохраняет выбранный опыт и несколько форматов работы при возврате и повторном открытии', async () => {
-    mount();
-    fireEvent.click(screen.getByRole('button', { name: /добавить вакансию/i }));
-    const modal = await screen.findByRole('dialog');
-    fireEvent.change(within(modal).getByLabelText(/название вакансии/i), { target: { value: 'Дизайнер' } });
-    fireEvent.click(within(modal).getByRole('button', { name: /опыт работы/i }));
-    fireEvent.click(within(await screen.findByRole('listbox')).getByRole('option', { name: 'От 3 до 6 лет' }));
-    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
-    fireEvent.click(within(modal).getByRole('button', { name: /формат работы/i }));
-    const list = await screen.findByRole('listbox');
-    fireEvent.click(within(list).getByRole('option', { name: 'Удалённо' }));
-    fireEvent.click(within(list).getByRole('option', { name: 'Гибрид' }));
-    expect(within(list).getByRole('option', { name: 'Удалённо' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(list).getByRole('option', { name: 'Гибрид' })).toHaveAttribute('aria-selected', 'true');
-    fireEvent.click(screen.getByRole('button', { name: 'Применить' }));
-    fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
-    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
-    expect(within(modal).getByRole('gridcell', { name: /Удалённо/ })).toBeInTheDocument();
-    expect(within(modal).getByRole('gridcell', { name: /Гибрид/ })).toBeInTheDocument();
-    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
-    for (let index = 0; index < 4; index++) {
-      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
-      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
-    }
-    await within(modal).findByLabelText('Основные обязанности');
-    expect(within(modal).getByText('От 3 до 6 лет')).toBeInTheDocument();
-    expect(within(modal).getByText('Удалённо, Гибрид')).toBeInTheDocument();
-    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
-    const reopened = await screen.findByRole('dialog');
-    expect(within(reopened).getByText('От 3 до 6 лет')).toBeInTheDocument();
-    expect(within(reopened).getByText('Удалённо, Гибрид')).toBeInTheDocument();
-  });
-
-  it('сохраняет сформированный черновик и открывает его повторно', async () => {
-    mount();
-    const modal = await goToQuestions();
-    for (let index = 0; index < 4; index++) {
-      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
-      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
-    }
+    await fillQuestions(modal);
+    const button = within(modal).getByRole('button', { name: /Создаём описание/ });
+    expect(button).toHaveAttribute('data-pending');
+    expect(within(button).getByRole('progressbar', { name: 'Загрузка' })).toBeInTheDocument();
+    expect(modal.querySelector('.modal-actions [role="status"]')).toBeNull();
+    expect(within(modal).getByRole('status')).toHaveClass('visually-hidden');
+    await act(async () => { finish(generated); });
     expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Исследования');
-    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Изучать потребности' } });
-    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const row = screen.getByRole('row', { name: /Дизайнер/ });
-    await act(async () => { fireEvent.click(row); });
-    const reopened = await screen.findByRole('dialog');
-    expect(within(reopened).getByLabelText('Основные обязанности')).toHaveValue('Изучать потребности');
   });
 
-  it('сохраняет правки и очищенный раздел при ошибке и повторной генерации, обновляя остальные разделы', async () => {
+  it('сохраняет ручной текст и пустой раздел при повторной генерации и ошибке', async () => {
     mount();
     const modal = await goToQuestions();
-    for (let index = 0; index < 4; index++) {
-      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
-      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
-    }
+    await fillQuestions(modal);
     await within(modal).findByLabelText('Основные обязанности');
-    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Мои обязанности' } });
+    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Моя редакция' } });
     fireEvent.change(within(modal).getByLabelText('Планы на полгода'), { target: { value: '' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Назад' }));
-    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Обновлённые навыки' } });
-    vi.mocked(generateDescription).mockRejectedValueOnce(new Error('Сервис недоступен'));
+    vi.mocked(generateDescription).mockRejectedValueOnce(new Error('Ошибка сервиса'));
     fireEvent.click(within(modal).getByRole('button', { name: 'Создать описание' }));
-    expect(await within(modal).findByRole('alert')).toHaveTextContent('Сервис недоступен');
-    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Обновлённые навыки');
-    vi.mocked(generateDescription).mockResolvedValueOnce({ tasks: 'Новые обязанности', project: 'Новый проект', plans: 'Новые планы', skills: 'Новые навыки' });
+    expect(await within(modal).findByRole('alert')).toHaveTextContent('Ошибка сервиса');
+    vi.mocked(generateDescription).mockResolvedValueOnce({ ...generated, tasks: 'Новое', project: 'Другой проект', plans: 'Новые планы' });
     fireEvent.click(within(modal).getByRole('button', { name: 'Создать описание' }));
-    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Мои обязанности');
+    expect(await within(modal).findByLabelText('Основные обязанности')).toHaveValue('Моя редакция');
     expect(within(modal).getByLabelText('Планы на полгода')).toHaveValue('');
-    expect(within(modal).getByLabelText('О проекте')).toHaveValue('Новый проект');
-    expect(within(modal).getByLabelText('Требования и ключевые навыки')).toHaveValue('Новые навыки');
+    expect(within(modal).getByLabelText('О проекте')).toHaveValue('Другой проект');
   });
 
-  it('защищает правки после открытия сохранённого черновика и не переносит их в новую вакансию', async () => {
+  it('открывает сохранённую вакансию в правой области и возвращает к списку', async () => {
     mount();
-    const modal = await goToQuestions();
-    for (let index = 0; index < 4; index++) {
-      fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: `Ответ ${index + 1}` } });
-      fireEvent.click(within(modal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
-    }
-    await within(modal).findByLabelText('Основные обязанности');
-    fireEvent.change(within(modal).getByLabelText('Основные обязанности'), { target: { value: 'Мои обязанности' } });
-    fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    const article = await createSaved();
+    expect(screen.getByRole('heading', { name: 'Дизайнер' })).toBeInTheDocument();
+    expect(article).toHaveTextContent('Исследования');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'К вакансиям' }));
     await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
-    const reopened = await screen.findByRole('dialog');
-    fireEvent.click(within(reopened).getByRole('button', { name: 'Назад' }));
-    fireEvent.click(within(reopened).getByRole('button', { name: 'Создать описание' }));
-    expect(await within(reopened).findByLabelText('Основные обязанности')).toHaveValue('Мои обязанности');
-    fireEvent.click(within(reopened).getByRole('button', { name: 'Сохранить' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    const nextModal = await goToQuestions();
-    for (let index = 0; index < 4; index++) {
-      fireEvent.change(within(nextModal).getByLabelText('Ваш ответ'), { target: { value: `Другой ответ ${index + 1}` } });
-      fireEvent.click(within(nextModal).getByRole('button', { name: index === 3 ? 'Создать описание' : 'Далее' }));
-    }
-    expect(await within(nextModal).findByLabelText('Основные обязанности')).toHaveValue('Исследования');
+    expect(screen.getByRole('article', { name: 'Описание вакансии' })).toHaveTextContent('Исследования');
   });
 
-  it('позволяет вводить ответ вручную, если браузер не поддерживает распознавание', async () => {
-    mount();
-    const modal = await goToQuestions();
-    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Текст сохранён' } });
+  it('показывает голосовые правки до сохранения и позволяет отменить их', async () => {
+    mount(); await createSaved();
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить голосом' }));
+    fireEvent.change(screen.getByLabelText('Ваш ответ'), { target: { value: 'Добавь HTML и зарплату от 150 тысяч' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Показать изменения' }));
+    expect(await screen.findByRole('heading', { name: 'Проверка изменений' })).toBeInTheDocument();
+    expect(screen.getByRole('article')).toHaveTextContent('Figma и HTML');
+    expect(screen.getByRole('article')).toHaveTextContent('от 150000 до 180000');
+    expect(screen.getByRole('article')).toHaveTextContent('Исследования');
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }));
+    expect(screen.getByRole('article')).toHaveTextContent('от 120000 до 180000');
+    expect(screen.getByRole('article')).not.toHaveTextContent('Figma и HTML');
+  });
+
+  it('сохраняет подтверждённые голосовые изменения после повторного открытия', async () => {
+    mount(); await createSaved();
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить голосом' }));
+    fireEvent.change(screen.getByLabelText('Ваш ответ'), { target: { value: 'Зарплата от 150 тысяч, добавь HTML' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Показать изменения' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Сохранить изменения' }));
+    fireEvent.click(screen.getByRole('button', { name: 'К вакансиям' }));
+    await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
+    expect(screen.getByRole('article')).toHaveTextContent('от 150000 до 180000');
+    expect(screen.getByRole('article')).toHaveTextContent('Figma и HTML');
+  });
+
+  it('при неудачном голосовом изменении не изменяет сохранённую вакансию', async () => {
+    mount(); await createSaved();
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить голосом' }));
+    const answer = screen.getByLabelText('Ваш ответ');
+    fireEvent.change(answer, { target: { value: 'Новая зарплата' } });
+    vi.mocked(reviseVacancy).mockRejectedValueOnce(new Error('Нет связи'));
+    fireEvent.click(screen.getByRole('button', { name: 'Показать изменения' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Нет связи');
+    expect(answer).toHaveValue('Новая зарплата');
+    expect(screen.getByRole('article')).toHaveTextContent('от 120000 до 180000');
+  });
+
+  it('оставляет ручной ввод на первом шаге при отсутствии микрофона', async () => {
+    mount(); const modal = await openCreation();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Дизайнер' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Начать запись' }));
-    expect(await within(modal).findByText(/не поддерживается/i)).toBeInTheDocument();
-    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Текст сохранён');
-    expect(within(modal).getByRole('button', { name: 'Повторить запись' })).toBeInTheDocument();
+    expect(await within(modal).findByRole('alert')).toHaveTextContent('не поддерживается');
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Дизайнер');
   });
 
-  it('показывает обработку записи и вставляет текст после ответа сервиса', async () => {
-    class Recorder {
-      state = 'inactive';
-      mimeType = 'audio/webm';
-      ondataavailable: ((event: { data: Blob }) => void) | null = null;
-      onstop: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      start() { this.state = 'recording'; }
-      stop() {
-        this.state = 'inactive';
-        this.ondataavailable?.({ data: new Blob(['test'], { type: 'audio/webm' }) });
-        this.onstop?.();
-      }
-    }
-    let respond: (response: Response) => void = () => undefined;
-    const mediaDescriptor = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
-    vi.stubEnv('VITE_GENERATION_URL', 'https://worker.example/generate');
-    vi.stubGlobal('MediaRecorder', Recorder);
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => { respond = resolve; })));
-    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: vi.fn(async () => ({ getTracks: () => [{ stop: vi.fn() }] })) } });
-    try {
-      mount();
-      const modal = await goToQuestions();
-      await act(async () => { fireEvent.click(within(modal).getByRole('button', { name: 'Начать запись' })); });
-      fireEvent.click(within(modal).getByRole('button', { name: 'Остановить запись' }));
-      const processing = within(modal).getByRole('button', { name: 'Распознаём речь' });
-      expect(processing).toBeDisabled();
-      expect(processing.querySelector('.spinner svg')).toBeInTheDocument();
-      expect(within(modal).getByRole('status')).toHaveTextContent('Распознаём речь');
-      await act(async () => { respond(new Response(JSON.stringify({ text: 'Голосовой ответ' }), { status: 200 })); });
-      expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue('Голосовой ответ');
-    } finally {
-      vi.unstubAllGlobals();
-      vi.unstubAllEnvs();
-      if (mediaDescriptor) Object.defineProperty(navigator, 'mediaDevices', mediaDescriptor);
-      else Reflect.deleteProperty(navigator, 'mediaDevices');
-    }
-  });
-
-  it('объясняет превышение длины и не теряет введённый текст', async () => {
-    mount();
-    const modal = await goToQuestions();
-    const answer = within(modal).getByLabelText('Ваш ответ');
+  it('объясняет превышение длины без потери текста', async () => {
+    mount(); const modal = await openCreation();
     const text = 'а'.repeat(4001);
-    fireEvent.change(answer, { target: { value: text } });
-    expect(answer).toHaveValue(text);
-    expect(within(modal).getByText(/сократите ответ до 4000/i)).toBeInTheDocument();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: text } });
     expect(within(modal).getByRole('button', { name: 'Далее' })).toBeDisabled();
-    fireEvent.change(answer, { target: { value: text.slice(0, 4000) } });
-    expect(within(modal).getByRole('button', { name: 'Далее' })).toBeEnabled();
+    expect(within(modal).getByRole('alert')).toHaveTextContent('4000');
+    expect(within(modal).getByLabelText('Ваш ответ')).toHaveValue(text);
+  });
+
+  it('закрывает окно по Escape и возвращает фокус', async () => {
+    mount(); const button = screen.getByRole('button', { name: /добавить вакансию/i });
+    button.focus(); const modal = await openCreation();
+    fireEvent.keyDown(modal, { key: 'Escape', code: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(button).toHaveFocus());
   });
 });

@@ -140,6 +140,8 @@ export const placeholder = style({
 
 /** .dd__chevron */
 export const chevron = style({
+  display: 'block',
+  alignSelf: 'center',
   color: vars.fg.muted,
   flex: 'none',
   transitionProperty: 'transform',

@@ -36,8 +36,6 @@ export interface VacancyDraft {
   workFormat: string[];
   schedule: string[];
   contract: string[];
-  benefits: string;
-  advantages: string;
   answers: Answers;
 }
 
@@ -87,10 +85,69 @@ export function createEmptyDraft(): VacancyDraft {
     workFormat: [],
     schedule: [],
     contract: [],
-    benefits: '',
-    advantages: '',
     answers: { tasks: '', project: '', plans: '', skills: '' },
   };
+}
+
+export type VacancyFields = Omit<VacancyDraft, 'answers'>;
+export type IntakeStage = 'main' | 'conditions';
+export interface VacancyRevision {
+  fields: Partial<VacancyFields>;
+  sections: Partial<VacancySections>;
+}
+export const MAIN_FIELDS = ['title', 'region', 'experience'] as const;
+export const CONDITION_FIELDS = ['salaryFrom', 'salaryTo', 'employment', 'workFormat', 'schedule', 'contract'] as const;
+const TEXT_FIELDS = ['title', 'region', 'experience', 'salaryFrom', 'salaryTo'] as const;
+const ARRAY_FIELDS = ['employment', 'workFormat', 'schedule', 'contract'] as const;
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+export function readFieldPatch(value: unknown, stage?: IntakeStage): Partial<VacancyFields> | null {
+  const data = record(value);
+  if (!data) return null;
+  const allowed: readonly string[] = stage === 'main' ? MAIN_FIELDS : stage === 'conditions' ? CONDITION_FIELDS : [...MAIN_FIELDS, ...CONDITION_FIELDS];
+  if (Object.keys(data).some((key) => !allowed.includes(key))) return null;
+  if (stage && allowed.some((key) => !(key in data))) return null;
+  const fields: Partial<VacancyFields> = {};
+  for (const key of TEXT_FIELDS) {
+    if (!(key in data)) continue;
+    const text = data[key];
+    if (typeof text !== 'string' || text.length > 200) return null;
+    if ((key === 'salaryFrom' || key === 'salaryTo') && text !== '' && (!/^\d{1,12}(?:\.\d{1,2})?$/.test(text) || !Number.isFinite(Number(text)))) return null;
+    fields[key] = text.trim();
+  }
+  for (const key of ARRAY_FIELDS) {
+    if (!(key in data)) continue;
+    const items = data[key];
+    if (!Array.isArray(items) || items.length > 20 || !items.every((item): item is string => typeof item === 'string' && !!item.trim() && item.length <= 200)) return null;
+    fields[key] = [...new Set(items.map((item) => item.trim()))];
+  }
+  if (fields.salaryFrom && fields.salaryTo && Number(fields.salaryFrom) > Number(fields.salaryTo)) return null;
+  return fields;
+}
+
+export function readRevision(value: unknown): VacancyRevision | null {
+  const data = record(value);
+  const fields = readFieldPatch(data?.fields);
+  const rawSections = record(data?.sections);
+  if (!fields || !rawSections || Object.keys(rawSections).some((key) => !QUESTIONS.some(({ id }) => key === id))) return null;
+  const sections: Partial<VacancySections> = {};
+  for (const { id } of QUESTIONS) {
+    if (!(id in rawSections)) continue;
+    const text = rawSections[id];
+    if (typeof text !== 'string' || text.length > 12_000) return null;
+    sections[id] = text.trim();
+  }
+  if (!Object.keys(fields).length && !Object.keys(sections).length) return null;
+  return { fields, sections };
+}
+
+export function draftError(draft: VacancyDraft): string {
+  if (!isFilled(draft.title)) return 'Назовите должность, чтобы продолжить.';
+  if (draft.salaryFrom && draft.salaryTo && Number(draft.salaryFrom) > Number(draft.salaryTo)) return 'Сумма «от» не может быть больше суммы «до».';
+  return '';
 }
 
 export function isFilled(value: string): boolean {
