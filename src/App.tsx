@@ -8,14 +8,14 @@ import { Stepper } from '@neobook/react/components/Stepper/Stepper';
 import { TextField } from '@neobook/react/components/TextField/TextField';
 import { Textarea } from '@neobook/react/components/Textarea/Textarea';
 import { Tooltip } from '@neobook/react/components/Tooltip/Tooltip';
-import { loadVacancies, storeVacancies, type SavedVacancy } from './vacancyStorage';
+import { loadVacancies, storeVacancies, type CreationPhase, type SavedVacancy } from './vacancyStorage';
 import { generateDescription, reviseVacancy, structureAnswer } from './generation';
 import { useSpeech } from './useSpeech';
 import { VoiceAnswer } from './VoiceAnswer';
 import { VacancyFields } from './VacancyFields';
 import { answerProgress, appendTranscript, createEmptyDraft, DEMO_VACANCIES, draftError, filterVacancies, isFilled, MAX_ANSWER_LENGTH, QUESTIONS, toVacancyRow, type Answers, type IntakeStage, type VacancyDraft, type VacancyRevision, type VacancyRow, type VacancySections } from './vacancy';
 
-type Phase = 'main' | 'conditions' | 'questions' | 'review';
+type Phase = CreationPhase;
 type Sort = { column: string | number; direction: 'ascending' | 'descending' };
 const STAGES = [{ label: 'Основное' }, { label: 'Условия' }, { label: 'Описание' }, { label: 'Проверка' }];
 const PHASES: Phase[] = ['main', 'conditions', 'questions', 'review'];
@@ -63,36 +63,45 @@ function Details({ draft, includeTitle = true }: { draft: VacancyDraft; includeT
 export function App() {
   const [initial] = useState(() => {
     try { return { ...loadVacancies(), error: '' }; }
-    catch { return { vacancies: [...DEMO_VACANCIES], savedDrafts: {} as Record<string, SavedVacancy>, error: 'Не удалось прочитать сохранённые вакансии в этом браузере.' }; }
+    catch { return { vacancies: [...DEMO_VACANCIES], savedDrafts: {} as Record<string, SavedVacancy>, creationSession: null, error: 'Не удалось прочитать сохранённые вакансии в этом браузере.' }; }
   });
   const [vacancies, setVacancies] = useState<VacancyRow[]>(initial.vacancies);
   const [savedDrafts, setSavedDrafts] = useState<Record<string, SavedVacancy>>(initial.savedDrafts);
   const [storageError, setStorageError] = useState(initial.error);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
-  useEffect(() => {
-    if (initial.error) return;
-    try { storeVacancies({ vacancies, savedDrafts }); setStorageError(''); }
-    catch { setStorageError('Не удалось сохранить вакансии в этом браузере. Не закрывайте страницу.'); }
-  }, [vacancies, savedDrafts, initial.error]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState('all');
   const [sort, setSort] = useState<Sort>({ column: 'title', direction: 'ascending' });
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<VacancyDraft>(createEmptyDraft);
-  const [sections, setSections] = useState<VacancySections | null>(null);
-  const [generatedInput, setGeneratedInput] = useState<{ title: string; answers: Answers } | null>(null);
-  const [sectionEdits, setSectionEdits] = useState<Partial<VacancySections>>({});
-  const [phase, setPhase] = useState<Phase>('main');
-  const [question, setQuestion] = useState(0);
-  const [intake, setIntake] = useState({ main: '', conditions: '' });
-  const [parsedIntake, setParsedIntake] = useState<{ main: string | null; conditions: string | null }>({ main: null, conditions: null });
+  const restoredSession = initial.creationSession;
+  const [open, setOpen] = useState(restoredSession?.open ?? false);
+  const [draft, setDraft] = useState<VacancyDraft>(() => restoredSession?.draft ?? createEmptyDraft());
+  const [sections, setSections] = useState<VacancySections | null>(restoredSession?.sections ?? null);
+  const [generatedInput, setGeneratedInput] = useState<{ title: string; answers: Answers } | null>(restoredSession?.generatedInput ?? null);
+  const [sectionEdits, setSectionEdits] = useState<Partial<VacancySections>>(restoredSession?.sectionEdits ?? {});
+  const [phase, setPhase] = useState<Phase>(restoredSession?.phase ?? 'main');
+  const [question, setQuestion] = useState(restoredSession?.question ?? 0);
+  const [intake, setIntake] = useState(restoredSession?.intake ?? { main: '', conditions: '' });
+  const [parsedIntake, setParsedIntake] = useState<{ main: string | null; conditions: string | null }>(restoredSession?.parsedIntake ?? { main: null, conditions: null });
   const [operation, setOperation] = useState<'main' | 'conditions' | 'generate' | 'revise' | null>(null);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [manualEdit, setManualEdit] = useState<SavedVacancy | null>(null);
   const [editText, setEditText] = useState('');
   const [revision, setRevision] = useState<VacancyRevision | null>(null);
+
+  const hasCreationProgress = open || phase !== 'main' || question !== 0 || intake.main.length > 0 || intake.conditions.length > 0 || parsedIntake.main !== null || parsedIntake.conditions !== null || draft.title.length > 0 || draft.region.length > 0 || draft.experience.length > 0 || draft.salaryFrom.length > 0 || draft.salaryTo.length > 0 || draft.employment.length > 0 || draft.workFormat.length > 0 || draft.schedule.length > 0 || draft.contract.length > 0 || QUESTIONS.some(({ id }) => draft.answers[id].length > 0) || sections !== null || generatedInput !== null || Object.keys(sectionEdits).length > 0;
+  useEffect(() => {
+    if (initial.error) return;
+    try {
+      storeVacancies({
+        vacancies,
+        savedDrafts,
+        creationSession: hasCreationProgress ? { open, draft, intake, parsedIntake, phase, question, sections, generatedInput, sectionEdits } : null,
+      });
+      setStorageError('');
+    } catch { setStorageError('Не удалось сохранить вакансии в этом браузере. Не закрывайте страницу.'); }
+  }, [vacancies, savedDrafts, open, draft, sections, generatedInput, sectionEdits, phase, question, intake, parsedIntake, hasCreationProgress, initial.error]);
 
   const addTranscript = (text: string) => {
     if (selectedId && editing && !open) {

@@ -103,6 +103,22 @@ describe('создание вакансии голосом', () => {
     expect(screen.queryByRole('row', { name: /Дизайнер/ })).not.toBeInTheDocument();
   });
 
+  it('возобновляет незавершённое создание на том же вопросе после перезагрузки', async () => {
+    const first = mount();
+    const modal = await goToQuestions();
+    fireEvent.change(within(modal).getByLabelText('Ваш ответ'), { target: { value: 'Первый сохранённый ответ' } });
+    fireEvent.click(within(modal).getByRole('button', { name: 'Далее' }));
+    await within(modal).findByText('Вопрос 2 из 4');
+    await waitFor(() => expect(JSON.parse(window.localStorage.getItem('voice-vacancies') ?? '{}').creationSession).toMatchObject({ open: true, phase: 'questions', question: 1 }));
+    first.unmount();
+
+    mount();
+    const restored = await screen.findByRole('dialog', { name: 'Добавление вакансии' });
+    expect(within(restored).getByText('Вопрос 2 из 4')).toBeInTheDocument();
+    fireEvent.click(within(restored).getByRole('button', { name: 'Назад' }));
+    expect(within(restored).getByLabelText('Ваш ответ')).toHaveValue('Первый сохранённый ответ');
+  });
+
   it('показывает текущий раздел и не открывает анализ', () => {
     mount();
     expect(screen.getByRole('heading', { name: 'Вакансии' })).toBeInTheDocument();
