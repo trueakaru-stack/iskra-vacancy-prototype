@@ -161,6 +161,8 @@ button:disabled { cursor: not-allowed; }
 .vacancy-table .new-vacancy { animation: vacancy-added 650ms ease-in-out 5; }
 @keyframes vacancy-added { 0%, 100% { background-color: transparent; } 50% { background-color: var(--nb-bg-hover); } }
 @supports selector(::-webkit-scrollbar) {
+  html::-webkit-scrollbar, body::-webkit-scrollbar { width: calc(var(--nb-space-2) * 2); }
+  html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb { border-right: var(--nb-space-2) solid transparent; background-clip: padding-box; }
   .fields textarea::-webkit-scrollbar, .answer-field textarea::-webkit-scrollbar { width: calc(var(--nb-space-2) * 2); }
   .fields textarea::-webkit-scrollbar-track, .answer-field textarea::-webkit-scrollbar-track { margin-block: var(--nb-space-2); }
   .fields textarea::-webkit-scrollbar-thumb, .answer-field textarea::-webkit-scrollbar-thumb { border-right: var(--nb-space-2) solid transparent; background-clip: padding-box; }
