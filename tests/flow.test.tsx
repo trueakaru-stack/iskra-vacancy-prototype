@@ -94,7 +94,7 @@ describe('создание вакансии голосом', () => {
     expect(screen.getByRole('heading', { name: 'Вакансии' })).toBeInTheDocument();
     const table = screen.getByRole('grid', { name: 'Вакансии' });
     const designerRow = screen.getByRole('row', { name: /Дизайнер/ });
-    expect(designerRow).toHaveClass('new-vacancy');
+    expect(designerRow).not.toHaveClass('new-vacancy');
     expect(within(table).getAllByRole('row')[1]).toBe(designerRow);
     expect(within(designerRow).getByText('Новая')).toBeInTheDocument();
     first.unmount();

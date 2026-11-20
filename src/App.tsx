@@ -20,6 +20,7 @@ type Sort = { column: string | number; direction: 'ascending' | 'descending' };
 const STAGES = [{ label: 'Основное' }, { label: 'Условия' }, { label: 'Описание' }, { label: 'Проверка' }];
 const PHASES: Phase[] = ['main', 'conditions', 'questions', 'review'];
 const NEW_VACANCY_BADGE_DURATION = 6000;
+const NEW_VACANCY_BADGE_FADE_DURATION = 180;
 const PROMPTS = {
   main: 'Назовите должность, регион и требуемый опыт работы.',
   conditions: 'Расскажите о зарплате, занятости, формате работы, графике и оформлении.',
@@ -71,8 +72,8 @@ export function App() {
   const [vacancies, setVacancies] = useState<VacancyRow[]>(initial.vacancies);
   const [savedDrafts, setSavedDrafts] = useState<Record<string, SavedVacancy>>(initial.savedDrafts);
   const [storageError, setStorageError] = useState(initial.error);
-  const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [newVacancyId, setNewVacancyId] = useState<string | null>(null);
+  const [fadingNewVacancyId, setFadingNewVacancyId] = useState<string | null>(null);
   const [pinnedVacancyId, setPinnedVacancyId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -110,8 +111,10 @@ export function App() {
 
   useEffect(() => {
     if (!newVacancyId) return;
-    const timeout = window.setTimeout(() => setNewVacancyId(null), NEW_VACANCY_BADGE_DURATION);
-    return () => window.clearTimeout(timeout);
+    setFadingNewVacancyId(null);
+    const fadeTimeout = window.setTimeout(() => setFadingNewVacancyId(newVacancyId), NEW_VACANCY_BADGE_DURATION - NEW_VACANCY_BADGE_FADE_DURATION);
+    const removeTimeout = window.setTimeout(() => { setNewVacancyId(null); setFadingNewVacancyId(null); }, NEW_VACANCY_BADGE_DURATION);
+    return () => { window.clearTimeout(fadeTimeout); window.clearTimeout(removeTimeout); };
   }, [newVacancyId]);
 
   const addTranscript = (text: string) => {
@@ -209,7 +212,7 @@ export function App() {
     const id = 'draft-' + crypto.randomUUID();
     setSavedDrafts((current) => ({ ...current, [id]: { draft, sections, sectionEdits } }));
     setVacancies((current) => [toVacancyRow(draft, id), ...current]);
-    setSelectedId(null); setHighlightedId(id); setNewVacancyId(id); setPinnedVacancyId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
+    setSelectedId(null); setNewVacancyId(id); setPinnedVacancyId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
     setDraft(createEmptyDraft()); setSections(null); setGeneratedInput(null); setSectionEdits({});
     setIntake({ main: '', conditions: '' }); setParsedIntake({ main: null, conditions: null });
     setPhase('main'); setQuestion(0); setOpen(false);
@@ -217,8 +220,7 @@ export function App() {
   const deleteVacancy = (id: string) => {
     setVacancies((current) => current.filter((row) => row.id !== id));
     setSavedDrafts((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)));
-    if (highlightedId === id) setHighlightedId(null);
-    if (newVacancyId === id) setNewVacancyId(null);
+    if (newVacancyId === id) { setNewVacancyId(null); setFadingNewVacancyId(null); }
     if (pinnedVacancyId === id) setPinnedVacancyId(null);
   };
   const saveChanges = (updated: SavedVacancy) => {
@@ -307,10 +309,10 @@ export function App() {
             <DataTableColumn id="expires" allowsSorting width="20%">Истекает</DataTableColumn>
             <DataTableColumn id="actions" width="5%" minWidth={56}><span className="visually-hidden">Действия</span></DataTableColumn>
           </DataTableHeader>
-          <DataTableBody items={filtered} dependencies={[highlightedId, newVacancyId]} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => {
+          <DataTableBody items={filtered} dependencies={[newVacancyId, fadingNewVacancyId]} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => {
             const canOpen = Boolean(savedDrafts[item.id]);
-            return <DataTableRow id={item.id} className={[highlightedId === item.id && 'new-vacancy', !canOpen && 'vacancy-placeholder'].filter(Boolean).join(' ') || undefined} onAnimationEnd={(event) => { if (event.target === event.currentTarget) setHighlightedId(null); }} onAction={canOpen ? () => { setSelectedId(item.id); setHighlightedId(null); setNewVacancyId(null); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); } : undefined}>
-              <DataTableCell><span className="vacancy-title">{item.title}</span>{item.id === newVacancyId && <span className="new-vacancy-badge">Новая</span>}</DataTableCell><DataTableCell>{item.region.join(', ') || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
+            return <DataTableRow id={item.id} className={!canOpen ? 'vacancy-placeholder' : undefined} onAction={canOpen ? () => { setSelectedId(item.id); setNewVacancyId(null); setFadingNewVacancyId(null); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); } : undefined}>
+              <DataTableCell><span className="vacancy-title">{item.title}</span>{item.id === newVacancyId && <span className={'new-vacancy-badge' + (fadingNewVacancyId === item.id ? ' is-fading' : '')}>Новая</span>}</DataTableCell><DataTableCell>{item.region.join(', ') || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
               <DataTableCell className="vacancy-actions"><Tooltip content="Удалить" placement="top"><Button variant="ghost" size="md" isIconOnly aria-label={'Удалить вакансию «' + item.title + '»'} onPress={() => deleteVacancy(item.id)}><Trash2 size={16} aria-hidden="true" /></Button></Tooltip></DataTableCell>
             </DataTableRow>;
           }}</DataTableBody>
