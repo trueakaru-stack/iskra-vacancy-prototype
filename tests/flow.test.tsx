@@ -83,13 +83,20 @@ describe('создание вакансии голосом', () => {
 
   it('возвращает к таблице, сохраняет вакансию после перезагрузки и сохраняет удаление', async () => {
     const first = mount();
+    const titleHeader = screen.getByRole('columnheader', { name: 'Название' });
+    fireEvent.click(titleHeader);
+    expect(titleHeader).toHaveAttribute('aria-sort', 'descending');
     const modal = await goToQuestions();
     await fillQuestions(modal);
     fireEvent.change(await within(modal).findByLabelText('Основные обязанности'), { target: { value: 'Моя сохранённая редакция' } });
     fireEvent.click(within(modal).getByRole('button', { name: 'Сохранить' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(screen.getByRole('heading', { name: 'Вакансии' })).toBeInTheDocument();
-    expect(screen.getByRole('row', { name: /Дизайнер/ })).toHaveClass('new-vacancy');
+    const table = screen.getByRole('grid', { name: 'Вакансии' });
+    const designerRow = screen.getByRole('row', { name: /Дизайнер/ });
+    expect(designerRow).toHaveClass('new-vacancy');
+    expect(within(table).getAllByRole('row')[1]).toBe(designerRow);
+    expect(within(designerRow).getByText('Новая')).toBeInTheDocument();
     first.unmount();
     const second = mount();
     await act(async () => { fireEvent.click(screen.getByRole('row', { name: /Дизайнер/ })); });
@@ -129,6 +136,12 @@ describe('создание вакансии голосом', () => {
     expect(menu.querySelector('svg')).toBeNull();
     fireEvent.click(connection);
     expect(screen.queryByRole('heading', { name: 'Подключение вакансий' })).not.toBeInTheDocument();
+  });
+
+  it('не открывает заглушки без описания', () => {
+    mount();
+    fireEvent.click(screen.getByRole('row', { name: /Менеджер по продажам HR-продукта/ }));
+    expect(screen.queryByRole('article', { name: 'Описание вакансии' })).not.toBeInTheDocument();
   });
 
   it('сохраняет колонки и сортирует отклики', () => {

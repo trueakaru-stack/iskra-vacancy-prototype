@@ -147,4 +147,7 @@ button:disabled { cursor: not-allowed; }
 
 .vacancy-table .vacancy-actions { text-align: center; }
 .vacancy-table .new-vacancy { animation: vacancy-added 650ms ease-in-out 5; }
+.vacancy-table .vacancy-placeholder { cursor: default; }
+.new-vacancy-badge { display: inline-flex; align-items: center; min-height: 20px; margin-inline-start: var(--nb-space-2); padding-inline: 6px; border: 1px solid var(--nb-border-default); border-radius: var(--nb-radius-lg); background: var(--nb-bg-hover); color: var(--nb-fg-secondary); font-size: var(--nb-font-size-12); font-weight: 700; line-height: 18px; vertical-align: middle; }
+@media (hover: hover) { .vacancy-table .vacancy-placeholder:hover { background: transparent; } }
 @keyframes vacancy-added { 0%, 100% { background-color: transparent; } 50% { background-color: var(--nb-bg-hover); } }

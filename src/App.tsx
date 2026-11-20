@@ -19,6 +19,7 @@ type Phase = CreationPhase;
 type Sort = { column: string | number; direction: 'ascending' | 'descending' };
 const STAGES = [{ label: 'Основное' }, { label: 'Условия' }, { label: 'Описание' }, { label: 'Проверка' }];
 const PHASES: Phase[] = ['main', 'conditions', 'questions', 'review'];
+const NEW_VACANCY_BADGE_DURATION = 6000;
 const PROMPTS = {
   main: 'Назовите должность, регион и требуемый опыт работы.',
   conditions: 'Расскажите о зарплате, занятости, формате работы, графике и оформлении.',
@@ -35,15 +36,17 @@ function formatDate(date: string | null): string {
     .format(new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))).replace(' г.', '');
 }
 
-function orderedVacancies(rows: VacancyRow[], sort: Sort): VacancyRow[] {
+function orderedVacancies(rows: VacancyRow[], sort: Sort, pinnedId: string | null): VacancyRow[] {
   const key = String(sort.column) as keyof VacancyRow;
-  return [...rows].sort((left, right) => {
+  const ordered = [...rows].sort((left, right) => {
     const a = left[key], b = right[key];
     if (a === null) return b === null ? 0 : 1;
     if (b === null) return -1;
     const result = typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b), 'ru', { numeric: true });
     return sort.direction === 'ascending' ? result : -result;
   });
+  const pinnedIndex = pinnedId ? ordered.findIndex((item) => item.id === pinnedId) : -1;
+  return pinnedIndex > 0 ? [ordered[pinnedIndex], ...ordered.slice(0, pinnedIndex), ...ordered.slice(pinnedIndex + 1)] : ordered;
 }
 
 function detailsOf(draft: VacancyDraft, includeTitle = true): Array<[string, string]> {
@@ -69,6 +72,7 @@ export function App() {
   const [savedDrafts, setSavedDrafts] = useState<Record<string, SavedVacancy>>(initial.savedDrafts);
   const [storageError, setStorageError] = useState(initial.error);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [newVacancyId, setNewVacancyId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState('all');
@@ -103,6 +107,12 @@ export function App() {
     } catch { setStorageError('Не удалось сохранить вакансии в этом браузере. Не закрывайте страницу.'); }
   }, [vacancies, savedDrafts, open, draft, sections, generatedInput, sectionEdits, phase, question, intake, parsedIntake, hasCreationProgress, initial.error]);
 
+  useEffect(() => {
+    if (!newVacancyId) return;
+    const timeout = window.setTimeout(() => setNewVacancyId(null), NEW_VACANCY_BADGE_DURATION);
+    return () => window.clearTimeout(timeout);
+  }, [newVacancyId]);
+
   const addTranscript = (text: string) => {
     if (selectedId && editing && !open) {
       setEditText((current) => appendTranscript(current, text));
@@ -117,7 +127,7 @@ export function App() {
   const speech = useSpeech(addTranscript);
   const busy = speech.busy || operation !== null;
   const regions = useMemo(() => [...new Set(vacancies.flatMap((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru')), [vacancies]);
-  const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort), [vacancies, query, region, sort]);
+  const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort, newVacancyId), [vacancies, query, region, sort, newVacancyId]);
   const selectedRow = vacancies.find((row) => row.id === selectedId);
   const saved = selectedId ? savedDrafts[selectedId] : undefined;
   const visibleDraft = manualEdit?.draft ?? (saved ? { ...saved.draft, ...revision?.fields } : { ...createEmptyDraft(), title: selectedRow?.title ?? '', region: selectedRow?.region ?? [] });
@@ -198,7 +208,7 @@ export function App() {
     const id = 'draft-' + crypto.randomUUID();
     setSavedDrafts((current) => ({ ...current, [id]: { draft, sections, sectionEdits } }));
     setVacancies((current) => [toVacancyRow(draft, id), ...current]);
-    setSelectedId(null); setHighlightedId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
+    setSelectedId(null); setHighlightedId(id); setNewVacancyId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
     setDraft(createEmptyDraft()); setSections(null); setGeneratedInput(null); setSectionEdits({});
     setIntake({ main: '', conditions: '' }); setParsedIntake({ main: null, conditions: null });
     setPhase('main'); setQuestion(0); setOpen(false);
@@ -207,6 +217,7 @@ export function App() {
     setVacancies((current) => current.filter((row) => row.id !== id));
     setSavedDrafts((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)));
     if (highlightedId === id) setHighlightedId(null);
+    if (newVacancyId === id) setNewVacancyId(null);
   };
   const saveChanges = (updated: SavedVacancy) => {
     if (!selectedId || draftError(updated.draft)) return;
@@ -294,10 +305,13 @@ export function App() {
             <DataTableColumn id="expires" allowsSorting width="20%">Истекает</DataTableColumn>
             <DataTableColumn id="actions" width="5%" minWidth={56}><span className="visually-hidden">Действия</span></DataTableColumn>
           </DataTableHeader>
-          <DataTableBody items={filtered} dependencies={[highlightedId]} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => <DataTableRow id={item.id} className={highlightedId === item.id ? 'new-vacancy' : undefined} onAnimationEnd={(event) => { if (event.target === event.currentTarget) setHighlightedId(null); }} onAction={() => { setSelectedId(item.id); setHighlightedId(null); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); }}>
-            <DataTableCell>{item.title}</DataTableCell><DataTableCell>{item.region.join(', ') || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
-            <DataTableCell className="vacancy-actions"><Tooltip content="Удалить" placement="top"><Button variant="ghost" size="md" isIconOnly aria-label={'Удалить вакансию «' + item.title + '»'} onPress={() => deleteVacancy(item.id)}><Trash2 size={16} aria-hidden="true" /></Button></Tooltip></DataTableCell>
-          </DataTableRow>}</DataTableBody>
+          <DataTableBody items={filtered} dependencies={[highlightedId, newVacancyId]} renderEmptyState={() => 'Вакансии не найдены'}>{(item) => {
+            const canOpen = Boolean(savedDrafts[item.id]);
+            return <DataTableRow id={item.id} className={[highlightedId === item.id && 'new-vacancy', !canOpen && 'vacancy-placeholder'].filter(Boolean).join(' ') || undefined} onAnimationEnd={(event) => { if (event.target === event.currentTarget) setHighlightedId(null); }} onAction={canOpen ? () => { setSelectedId(item.id); setHighlightedId(null); setNewVacancyId(null); setEditing(false); setManualEdit(null); setRevision(null); setEditText(''); setError(''); speech.reset(); } : undefined}>
+              <DataTableCell><span className="vacancy-title">{item.title}</span>{item.id === newVacancyId && <span className="new-vacancy-badge">Новая</span>}</DataTableCell><DataTableCell>{item.region.join(', ') || '—'}</DataTableCell><DataTableCell>{item.responses === null ? '—' : item.responses}</DataTableCell><DataTableCell>{formatDate(item.expires)}</DataTableCell>
+              <DataTableCell className="vacancy-actions"><Tooltip content="Удалить" placement="top"><Button variant="ghost" size="md" isIconOnly aria-label={'Удалить вакансию «' + item.title + '»'} onPress={() => deleteVacancy(item.id)}><Trash2 size={16} aria-hidden="true" /></Button></Tooltip></DataTableCell>
+            </DataTableRow>;
+          }}</DataTableBody>
         </DataTable>
       </>}
       {operation && !open && <span className="visually-hidden" role="status">{operationLabel}</span>}
