@@ -73,6 +73,7 @@ export function App() {
   const [storageError, setStorageError] = useState(initial.error);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [newVacancyId, setNewVacancyId] = useState<string | null>(null);
+  const [pinnedVacancyId, setPinnedVacancyId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState('all');
@@ -127,7 +128,7 @@ export function App() {
   const speech = useSpeech(addTranscript);
   const busy = speech.busy || operation !== null;
   const regions = useMemo(() => [...new Set(vacancies.flatMap((item) => item.region).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru')), [vacancies]);
-  const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort, newVacancyId), [vacancies, query, region, sort, newVacancyId]);
+  const filtered = useMemo(() => orderedVacancies(filterVacancies(vacancies, query, region === 'all' ? '' : region), sort, pinnedVacancyId), [vacancies, query, region, sort, pinnedVacancyId]);
   const selectedRow = vacancies.find((row) => row.id === selectedId);
   const saved = selectedId ? savedDrafts[selectedId] : undefined;
   const visibleDraft = manualEdit?.draft ?? (saved ? { ...saved.draft, ...revision?.fields } : { ...createEmptyDraft(), title: selectedRow?.title ?? '', region: selectedRow?.region ?? [] });
@@ -208,7 +209,7 @@ export function App() {
     const id = 'draft-' + crypto.randomUUID();
     setSavedDrafts((current) => ({ ...current, [id]: { draft, sections, sectionEdits } }));
     setVacancies((current) => [toVacancyRow(draft, id), ...current]);
-    setSelectedId(null); setHighlightedId(id); setNewVacancyId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
+    setSelectedId(null); setHighlightedId(id); setNewVacancyId(id); setPinnedVacancyId(id); setQuery(''); setRegion('all'); setEditing(false); setRevision(null); setEditText('');
     setDraft(createEmptyDraft()); setSections(null); setGeneratedInput(null); setSectionEdits({});
     setIntake({ main: '', conditions: '' }); setParsedIntake({ main: null, conditions: null });
     setPhase('main'); setQuestion(0); setOpen(false);
@@ -218,6 +219,7 @@ export function App() {
     setSavedDrafts((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== id)));
     if (highlightedId === id) setHighlightedId(null);
     if (newVacancyId === id) setNewVacancyId(null);
+    if (pinnedVacancyId === id) setPinnedVacancyId(null);
   };
   const saveChanges = (updated: SavedVacancy) => {
     if (!selectedId || draftError(updated.draft)) return;
@@ -297,7 +299,7 @@ export function App() {
           </div>
           <Button className="add-button" variant="primary" size="lg" leadingIcon={<CirclePlus className="add-icon" size={18} aria-hidden="true" />} onPress={() => { setError(''); speech.reset(); setOpen(true); }}>Добавить вакансию</Button>
         </div>
-        <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => setSort({ column: next.column ?? 'title', direction: next.direction })} minInlineSize={720}>
+        <DataTable aria-label="Вакансии" className="vacancy-table" density="cozy" isRich sortDescriptor={sort} onSortChange={(next) => { setSort({ column: next.column ?? 'title', direction: next.direction }); setPinnedVacancyId(null); }} minInlineSize={720}>
           <DataTableHeader>
             <DataTableColumn id="title" isRowHeader allowsSorting width="51%" minWidth={280}>Название</DataTableColumn>
             <DataTableColumn id="region" allowsSorting width="11%">Регион</DataTableColumn>
