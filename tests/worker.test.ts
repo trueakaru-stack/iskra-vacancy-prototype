@@ -20,6 +20,7 @@ describe('генерация описания', () => {
     expect(result.status).toBe(200);
     expect(await result.json()).toEqual({ sections });
     expect(run).toHaveBeenCalledOnce();
+    expect(run).toHaveBeenCalledWith('@cf/qwen/qwen3.8-27b', expect.objectContaining({ reasoning_effort: 'low' }));
     expect(result.headers.get('Access-Control-Allow-Origin')).toBe('https://example.com');
   });
 

@@ -1,7 +1,7 @@
 import { createEmptyDraft, draftError, MAX_ANSWER_LENGTH, QUESTIONS, readFieldPatch, readRevision, type Answers, type VacancyFields, type VacancySections } from '../../src/vacancy';
 import { canonicalChoice, canonicalExperience, CHOICE_OPTIONS, EXPERIENCE, normalizeSpokenSchedules } from '../../src/vacancyOptions';
 
-const MODEL = '@cf/qwen/qwen3-30b-a3b-fp8';
+const MODEL = '@cf/qwen/qwen3.8-27b';
 const SPEECH_MODEL = '@cf/openai/whisper-large-v3-turbo';
 const MAX_BODY_BYTES = 50_000;
 const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
@@ -62,6 +62,7 @@ async function runJSON(env: Environment, system: string, data: unknown, schema: 
   const result = await env.AI.run(MODEL, {
     messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify(data) }],
     temperature: 0, max_tokens: maxTokens,
+    reasoning_effort: 'low',
     response_format: { type: 'json_schema', json_schema: schema },
   });
   const direct = object(result)?.response;
